@@ -9,7 +9,7 @@
   <style>
     body {
       margin: 0;
-      font-family: Arial;
+      font-family: Arial, sans-serif;
       background: #0f172a;
       color: white;
       text-align: center;
@@ -31,7 +31,6 @@
       padding: 20px;
     }
 
-    .top-bar,
     .section {
       background: #1e293b;
       padding: 25px;
@@ -64,7 +63,7 @@
 <div class="login-box" id="loginBox">
   <h1>Casino Login</h1>
 
-  <input id="username" placeholder="Website Username">
+  <input id="username" placeholder="Username">
   <input id="password" type="password" placeholder="Password">
 
   <br>
@@ -79,15 +78,15 @@
 <div class="dashboard hidden" id="dashboard">
 
   <!-- PROFILE -->
-  <div class="top-bar">
+  <div class="section">
     <h2>Profile</h2>
 
-    <p><strong>Website User:</strong> <span id="profileUser"></span></p>
-    <p><strong>Roblox Account:</strong> <span id="profileRoblox">Not Linked</span></p>
+    <p><strong>User:</strong> <span id="profileUser"></span></p>
+    <p><strong>Roblox:</strong> <span id="profileRoblox">Not Linked</span></p>
     <p><strong>Balance:</strong> <span id="profileBalance">0</span></p>
     <p><strong>Total Wagered:</strong> <span id="profileWagered">0</span></p>
 
-    <button onclick="linkRoblox()">Link Roblox Account</button>
+    <button onclick="linkRoblox()">Link Roblox</button>
     <button onclick="logout()">Logout</button>
 
     <p id="robloxMsg"></p>
@@ -97,9 +96,9 @@
   <div class="section">
     <h2>Deposit Credits</h2>
 
-    <button onclick="deposit(500)">+500 Credits</button>
-    <button onclick="deposit(2000)">+2000 Credits</button>
-    <button onclick="deposit(5000)">+5000 Credits</button>
+    <button onclick="deposit(500)">+500</button>
+    <button onclick="deposit(2000)">+2000</button>
+    <button onclick="deposit(5000)">+5000</button>
 
     <p id="depositMsg"></p>
   </div>
@@ -124,120 +123,86 @@ let balance = 0;
 let totalWagered = 0;
 let robloxUsername = "";
 
-/* ================= REGISTER ================= */
-
+/* REGISTER */
 async function register() {
-  try {
-    const res = await fetch(API + "/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        username: document.getElementById("username").value,
-        password: document.getElementById("password").value
-      })
-    });
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
 
-    const text = await res.text();
-    document.getElementById("loginMsg").innerText = text;
-  } catch {
-    document.getElementById("loginMsg").innerText =
-      "Server connection failed";
+  if (!username || !password) {
+    document.getElementById("loginMsg").innerText = "Fill all fields";
+    return;
   }
+
+  const res = await fetch(`${API}/register`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      username,
+      password
+    })
+  });
+
+  const text = await res.text();
+  document.getElementById("loginMsg").innerText = text;
 }
 
-/* ================= LOGIN ================= */
-
+/* LOGIN */
 async function login() {
-  try {
-    const res = await fetch(API + "/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        username: document.getElementById("username").value,
-        password: document.getElementById("password").value
-      })
-    });
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
 
-    const text = await res.text();
+  const res = await fetch(`${API}/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      username,
+      password
+    })
+  });
 
-    let data;
+  const data = await res.json();
 
-    try {
-      data = JSON.parse(text);
-    } catch {
-      document.getElementById("loginMsg").innerText = text;
-      return;
-    }
-
-    if (data.message !== "Login success") {
-      document.getElementById("loginMsg").innerText =
-        "Login failed";
-      return;
-    }
-
-    currentUser = data.username;
-    balance = data.balance;
-    totalWagered = data.totalWagered || 0;
-    robloxUsername = data.robloxUsername || "";
-
-    updateProfile();
-
-    document.getElementById("loginBox").classList.add("hidden");
-    document.getElementById("dashboard").classList.remove("hidden");
-
-  } catch {
-    document.getElementById("loginMsg").innerText =
-      "Login failed";
+  if (data.message !== "Login success") {
+    document.getElementById("loginMsg").innerText = data.message;
+    return;
   }
+
+  currentUser = data.username;
+  balance = data.balance || 0;
+  totalWagered = data.totalWagered || 0;
+  robloxUsername = data.robloxUsername || "";
+
+  updateProfile();
+
+  document.getElementById("loginBox").classList.add("hidden");
+  document.getElementById("dashboard").classList.remove("hidden");
 }
 
-/* ================= PROFILE ================= */
-
+/* PROFILE */
 function updateProfile() {
-  document.getElementById("profileUser").innerText =
-    currentUser;
-
-  document.getElementById("profileBalance").innerText =
-    balance;
-
-  document.getElementById("profileWagered").innerText =
-    totalWagered;
-
+  document.getElementById("profileUser").innerText = currentUser;
+  document.getElementById("profileBalance").innerText = balance;
+  document.getElementById("profileWagered").innerText = totalWagered;
   document.getElementById("profileRoblox").innerText =
     robloxUsername || "Not Linked";
 }
 
-/* ================= ROBLOX LINK ================= */
-
-function linkRoblox() {
-  if (!currentUser) {
-    document.getElementById("robloxMsg").innerText =
-      "Login first";
-    return;
-  }
-
-  window.location.href =
-    `http://localhost:3000/auth/roblox?username=${currentUser}`;
-}
-
-/* ================= DEPOSIT ================= */
-
+/* DEPOSIT */
 async function deposit(amount) {
   balance += amount;
 
-  updateProfile();
   await saveUser();
+  updateProfile();
 
   document.getElementById("depositMsg").innerText =
-    "Credits added successfully";
+    "Credits added";
 }
 
-/* ================= COINFLIP ================= */
-
+/* COINFLIP */
 async function coinFlip(choice) {
   const bet = 100;
 
@@ -262,41 +227,35 @@ async function coinFlip(choice) {
       "You lost!";
   }
 
-  updateProfile();
   await saveUser();
+  updateProfile();
 }
 
-/* ================= SAVE USER ================= */
-
+/* SAVE USER */
 async function saveUser() {
-  await fetch(API + "/updateUser", {
+  await fetch(`${API}/updateUser`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
       username: currentUser,
-      balance: balance,
-      totalWagered: totalWagered,
-      robloxUsername: robloxUsername
+      balance,
+      totalWagered,
+      robloxUsername
     })
   });
 }
 
-/* ================= LOGOUT ================= */
+/* ROBLOX LINK */
+function linkRoblox() {
+  window.location.href =
+    `${API}/auth/roblox?username=${currentUser}`;
+}
 
+/* LOGOUT */
 function logout() {
-  currentUser = "";
-  balance = 0;
-  totalWagered = 0;
-  robloxUsername = "";
-
-  document.getElementById("dashboard").classList.add("hidden");
-  document.getElementById("loginBox").classList.remove("hidden");
-
-  document.getElementById("username").value = "";
-  document.getElementById("password").value = "";
-  document.getElementById("loginMsg").innerText = "";
+  location.reload();
 }
 </script>
 
