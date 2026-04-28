@@ -1,0 +1,304 @@
+<!-- client/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Casino Dashboard</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+      text-align: center;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .login-box {
+      width: 450px;
+      margin: 80px auto;
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 12px;
+    }
+
+    .dashboard {
+      padding: 20px;
+    }
+
+    .top-bar,
+    .section {
+      background: #1e293b;
+      padding: 25px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 80%;
+      padding: 12px;
+      margin: 8px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 12px 20px;
+      margin: 8px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-box" id="loginBox">
+  <h1>Casino Login</h1>
+
+  <input id="username" placeholder="Website Username">
+  <input id="password" type="password" placeholder="Password">
+
+  <br>
+
+  <button onclick="register()">Register</button>
+  <button onclick="login()">Login</button>
+
+  <p id="loginMsg"></p>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard hidden" id="dashboard">
+
+  <!-- PROFILE -->
+  <div class="top-bar">
+    <h2>Profile</h2>
+
+    <p><strong>Website User:</strong> <span id="profileUser"></span></p>
+    <p><strong>Roblox Account:</strong> <span id="profileRoblox">Not Linked</span></p>
+    <p><strong>Balance:</strong> <span id="profileBalance">0</span></p>
+    <p><strong>Total Wagered:</strong> <span id="profileWagered">0</span></p>
+
+    <button onclick="linkRoblox()">Link Roblox Account</button>
+    <button onclick="logout()">Logout</button>
+
+    <p id="robloxMsg"></p>
+  </div>
+
+  <!-- DEPOSIT -->
+  <div class="section">
+    <h2>Deposit Credits</h2>
+
+    <button onclick="deposit(500)">+500 Credits</button>
+    <button onclick="deposit(2000)">+2000 Credits</button>
+    <button onclick="deposit(5000)">+5000 Credits</button>
+
+    <p id="depositMsg"></p>
+  </div>
+
+  <!-- COINFLIP -->
+  <div class="section">
+    <h2>Coinflip</h2>
+
+    <button onclick="coinFlip('heads')">Heads</button>
+    <button onclick="coinFlip('tails')">Tails</button>
+
+    <p id="gameMsg"></p>
+  </div>
+
+</div>
+
+<script>
+const API = "http://localhost:3000";
+
+let currentUser = "";
+let balance = 0;
+let totalWagered = 0;
+let robloxUsername = "";
+
+/* ================= REGISTER ================= */
+
+async function register() {
+  try {
+    const res = await fetch(API + "/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        username: document.getElementById("username").value,
+        password: document.getElementById("password").value
+      })
+    });
+
+    const text = await res.text();
+    document.getElementById("loginMsg").innerText = text;
+  } catch {
+    document.getElementById("loginMsg").innerText =
+      "Server connection failed";
+  }
+}
+
+/* ================= LOGIN ================= */
+
+async function login() {
+  try {
+    const res = await fetch(API + "/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        username: document.getElementById("username").value,
+        password: document.getElementById("password").value
+      })
+    });
+
+    const text = await res.text();
+
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      document.getElementById("loginMsg").innerText = text;
+      return;
+    }
+
+    if (data.message !== "Login success") {
+      document.getElementById("loginMsg").innerText =
+        "Login failed";
+      return;
+    }
+
+    currentUser = data.username;
+    balance = data.balance;
+    totalWagered = data.totalWagered || 0;
+    robloxUsername = data.robloxUsername || "";
+
+    updateProfile();
+
+    document.getElementById("loginBox").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+
+  } catch {
+    document.getElementById("loginMsg").innerText =
+      "Login failed";
+  }
+}
+
+/* ================= PROFILE ================= */
+
+function updateProfile() {
+  document.getElementById("profileUser").innerText =
+    currentUser;
+
+  document.getElementById("profileBalance").innerText =
+    balance;
+
+  document.getElementById("profileWagered").innerText =
+    totalWagered;
+
+  document.getElementById("profileRoblox").innerText =
+    robloxUsername || "Not Linked";
+}
+
+/* ================= ROBLOX LINK ================= */
+
+function linkRoblox() {
+  if (!currentUser) {
+    document.getElementById("robloxMsg").innerText =
+      "Login first";
+    return;
+  }
+
+  window.location.href =
+    `http://localhost:3000/auth/roblox?username=${currentUser}`;
+}
+
+/* ================= DEPOSIT ================= */
+
+async function deposit(amount) {
+  balance += amount;
+
+  updateProfile();
+  await saveUser();
+
+  document.getElementById("depositMsg").innerText =
+    "Credits added successfully";
+}
+
+/* ================= COINFLIP ================= */
+
+async function coinFlip(choice) {
+  const bet = 100;
+
+  if (balance < bet) {
+    document.getElementById("gameMsg").innerText =
+      "Not enough balance";
+    return;
+  }
+
+  balance -= bet;
+  totalWagered += bet;
+
+  const result =
+    Math.random() < 0.5 ? "heads" : "tails";
+
+  if (choice === result) {
+    balance += 200;
+    document.getElementById("gameMsg").innerText =
+      "You won!";
+  } else {
+    document.getElementById("gameMsg").innerText =
+      "You lost!";
+  }
+
+  updateProfile();
+  await saveUser();
+}
+
+/* ================= SAVE USER ================= */
+
+async function saveUser() {
+  await fetch(API + "/updateUser", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      username: currentUser,
+      balance: balance,
+      totalWagered: totalWagered,
+      robloxUsername: robloxUsername
+    })
+  });
+}
+
+/* ================= LOGOUT ================= */
+
+function logout() {
+  currentUser = "";
+  balance = 0;
+  totalWagered = 0;
+  robloxUsername = "";
+
+  document.getElementById("dashboard").classList.add("hidden");
+  document.getElementById("loginBox").classList.remove("hidden");
+
+  document.getElementById("username").value = "";
+  document.getElementById("password").value = "";
+  document.getElementById("loginMsg").innerText = "";
+}
+</script>
+
+</body>
+</html>
