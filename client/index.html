@@ -235,6 +235,7 @@ async function login() {
   balance = data.balance || 0;
   totalWagered = data.totalWagered || 0;
   robloxUsername = data.robloxUsername || "";
+  profilePicture = data.profilePicture || "";
 
   localStorage.setItem("currentUser", currentUser);
   localStorage.setItem("balance", balance);
@@ -355,7 +356,8 @@ async function saveUser() {
       username: currentUser,
       balance,
       totalWagered,
-      robloxUsername
+      robloxUsername,
+      profilePicture
     })
   });
 }
@@ -367,7 +369,7 @@ function changeProfilePicture() {
 
   const reader = new FileReader();
 
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
     profilePicture = e.target.result;
 
     localStorage.setItem(
@@ -377,6 +379,8 @@ function changeProfilePicture() {
 
     document.getElementById("profilePicPreview").src =
       profilePicture;
+
+    await saveUser();   // THIS is the missing part
 
     updateProfile();
   };

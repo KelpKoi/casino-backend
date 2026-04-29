@@ -56,12 +56,13 @@ app.post("/register", (req, res) => {
   }
 
   users.push({
-    username,
-    password,
-    robloxUsername: "",
-    balance: 100,
-    totalWagered: 0
-  });
+  username,
+  password,
+  robloxUsername: "",
+  balance: 100,
+  totalWagered: 0,
+  profilePicture: ""
+});
 
   saveUsers(users);
 
@@ -108,13 +109,14 @@ app.post("/login", (req, res) => {
     });
   }
 
-  res.json({
-    message: "Login success",
-    username: user.username,
-    robloxUsername: user.robloxUsername || "",
-    balance: user.balance || 0,
-    totalWagered: user.totalWagered || 0
-  });
+  return res.json({
+  message: "Login success",
+  username: user.username,
+  robloxUsername: user.robloxUsername || "",
+  balance: user.balance || 0,
+  totalWagered: user.totalWagered || 0,
+  profilePicture: user.profilePicture || ""
+});
 });
 
 /* ADMIN CHANGE BALANCE */
@@ -169,12 +171,13 @@ app.get("/admin/users", (req, res) => {
 app.post("/updateUser", (req, res) => {
   const users = loadUsers();
 
-  const {
-    username,
-    balance,
-    totalWagered,
-    robloxUsername
-  } = req.body;
+ const {
+  username,
+  balance,
+  totalWagered,
+  robloxUsername,
+  profilePicture
+} = req.body;
 
   const user = users.find(
     u => u.username === username
@@ -187,6 +190,7 @@ app.post("/updateUser", (req, res) => {
   user.balance = balance;
   user.totalWagered = totalWagered;
   user.robloxUsername = robloxUsername;
+  user.profilePicture = profilePicture || "";
 
   saveUsers(users);
 
