@@ -170,10 +170,28 @@
 
   <!-- ADMIN PANEL -->
   <div class="section hidden" id="adminPanel">
-    <h2>Admin Panel</h2>
-    <button onclick="loadAdminPanel()">Refresh Users</button>
-    <div id="adminUsers"></div>
-  </div>
+  <h2>Admin Panel</h2>
+
+  <input
+    id="adminSearch"
+    type="text"
+    placeholder="Search username or Roblox..."
+    oninput="loadAdminPanel()"
+    style="
+      width:300px;
+      margin-bottom:15px;
+      text-align:center;
+    "
+  >
+
+  <br>
+
+  <button onclick="loadAdminPanel()">
+    Refresh Users
+  </button>
+
+  <div id="adminUsers"></div>
+</div>
 
 </div>
 <script>
@@ -978,13 +996,31 @@ async function loadAdminPanel() {
 
   let html = "";
 
+const searchValue =
+  document.getElementById("adminSearch")?.value
+    ?.toLowerCase()
+    ?.trim() || "";
+
   users.forEach(user => {
+  const username =
+    (user.username || "").toLowerCase();
+
+  const roblox =
+    (user.robloxUsername || "").toLowerCase();
+
+  if (
+    searchValue &&
+    !username.includes(searchValue) &&
+    !roblox.includes(searchValue)
+  ) {
+    return;
+  }
     html += `
       <div style="
         background:#0f172a;
-        padding:20px;
-        margin:15px 0;
-        border-radius:12px;
+        padding:12px;
+        margin:10px 0;
+        border-radius:10px;
         text-align:left;
         border:1px solid rgba(255,255,255,0.08);
       ">
@@ -1216,34 +1252,6 @@ if (currentUser && currentUser !== "admin") {
   }
 }
 
-/* ADMIN AUTO LOGIN */
-if (currentUser === "admin") {
-  document.getElementById("loginBox")
-    .classList.add("hidden");
-
-  document.getElementById("dashboard")
-    .classList.remove("hidden");
-
-  document.getElementById("profileUser").innerText =
-    "Admin";
-
-  document.getElementById("profileUserRight").innerText =
-    "Admin";
-
-  document.getElementById("profileBalance").innerText =
-    "∞";
-
-  document.getElementById("profileBalanceRight").innerText =
-    "∞";
-
-  document.getElementById("profileWagered").innerText =
-    "Admin Access";
-
-  document.getElementById("profileRoblox").innerText =
-    "Administrator";
-
-  loadAdminPanel();
-}
 </script>
 
 </body>
