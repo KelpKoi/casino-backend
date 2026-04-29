@@ -211,6 +211,42 @@ app.post("/updateUser", (req, res) => {
   res.send("Updated");
 });
 
+/* ================= CHANGE USERNAME ================= */
+
+app.post("/changeUsername", (req, res) => {
+  const users = loadUsers();
+
+  const { oldUsername, newUsername } = req.body;
+
+  if (!oldUsername || !newUsername) {
+    return res.send("Missing username data");
+  }
+
+  const existingUser = users.find(
+    u =>
+      u.username.toLowerCase() ===
+      newUsername.toLowerCase()
+  );
+
+  if (existingUser) {
+    return res.send("Username already taken");
+  }
+
+  const user = users.find(
+    u => u.username === oldUsername
+  );
+
+  if (!user) {
+    return res.send("Original user not found");
+  }
+
+  user.username = newUsername;
+
+  saveUsers(users);
+
+  res.send("Username updated");
+});
+
 /* ================= ROBLOX LINK PLACEHOLDER ================= */
 
 app.get("/auth/roblox", (req, res) => {
