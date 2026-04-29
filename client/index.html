@@ -116,12 +116,12 @@
 </div>
 
 <script>
-const API = "http://localhost:3000";
+const API = "https://casino-backend-nah2.onrender.com";
 
-let currentUser = "";
-let balance = 0;
-let totalWagered = 0;
-let robloxUsername = "";
+let currentUser = localStorage.getItem("currentUser") || "";
+let balance = Number(localStorage.getItem("balance")) || 0;
+let totalWagered = Number(localStorage.getItem("totalWagered")) || 0;
+let robloxUsername = localStorage.getItem("robloxUsername") || "";
 
 /* REGISTER */
 async function register() {
@@ -177,6 +177,11 @@ async function login() {
   robloxUsername = data.robloxUsername || "";
 
   updateProfile();
+
+localStorage.setItem("currentUser", currentUser);
+localStorage.setItem("balance", balance);
+localStorage.setItem("totalWagered", totalWagered);
+localStorage.setItem("robloxUsername", robloxUsername);
 
   document.getElementById("loginBox").classList.add("hidden");
   document.getElementById("dashboard").classList.remove("hidden");
@@ -255,8 +260,19 @@ function linkRoblox() {
 
 /* LOGOUT */
 function logout() {
+  localStorage.removeItem("currentUser");
+  localStorage.removeItem("balance");
+  localStorage.removeItem("totalWagered");
+  localStorage.removeItem("robloxUsername");
   location.reload();
 }
+
+if (currentUser) {
+  updateProfile();
+  document.getElementById("loginBox").classList.add("hidden");
+  document.getElementById("dashboard").classList.remove("hidden");
+}
+
 </script>
 
 </body>
