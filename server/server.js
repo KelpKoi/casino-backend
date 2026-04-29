@@ -239,20 +239,22 @@ app.get("/auth/roblox/callback", (req, res) => {
   const users = loadUsers();
 
   const user = users.find(
-    u =>
-      u.username.toLowerCase() ===
-      String(username).toLowerCase()
-  );
+  u =>
+    String(u.username).trim().toLowerCase() ===
+    String(username).trim().toLowerCase()
+);
 
   if (!user) {
-    return res.send(`User not found: ${username}`);
-  }
+  return res.send(
+    `User not found: ${username} | Existing users: ${users.map(u => u.username).join(", ")}`
+  );
+}
 
   user.robloxUsername = "Linked Roblox Account";
 
-  saveUsers(users);
+saveUsers(users);
 
- return res.redirect(
+return res.redirect(
   "https://dope-casino.vercel.app/?refreshUser=true"
 );
 });
