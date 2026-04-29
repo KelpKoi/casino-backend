@@ -1145,6 +1145,28 @@ async function deleteUser(username) {
   await loadAdminPanel();
 }
 
+function toggleDepositMenu() {
+  document.getElementById("gameDisplay").innerHTML = `
+    <h2>Deposit Credits</h2>
+
+    <button onclick="buyCredits(15)">15 Credits</button>
+    <button onclick="buyCredits(75)">75 Credits</button>
+    <button onclick="buyCredits(150)">150 Credits</button>
+    <button onclick="buyCredits(375)">375 Credits</button>
+
+    <br><br>
+
+    <button onclick="buyCredits(750)">750 Credits</button>
+    <button onclick="buyCredits(1500)">1500 Credits</button>
+    <button onclick="buyCredits(3750)">3750 Credits</button>
+    <button onclick="buyCredits(7500)">7500 Credits</button>
+    <button onclick="buyCredits(15000)">15000 Credits</button>
+  `;
+
+  document.getElementById("gameMsg").innerText =
+    "";
+}
+
 async function buyCredits(credits) {
   if (!currentUser) {
     alert("Login first");
@@ -1164,6 +1186,8 @@ async function buyCredits(credits) {
 
   const data = await res.json();
 
+  console.log("DEPOSIT RESPONSE:", data);
+
   if (data.error) {
     alert(data.error);
     return;
@@ -1171,23 +1195,9 @@ async function buyCredits(credits) {
 
   if (data.purchaseURL) {
     window.open(data.purchaseURL, "_blank");
+  } else {
+    alert("Purchase link failed");
   }
-}
-
-function deposit(amount) {
-  if (!currentUser || currentUser === "admin") return;
-
-  balance += amount;
-  totalWagered += 0;
-
-  localStorage.setItem("balance", balance);
-  localStorage.setItem("totalWagered", totalWagered);
-
-  updateProfile();
-  saveUser();
-
-  document.getElementById("gameMsg").innerText =
-    `Deposited ${amount} credits`;
 }
 
 function toggleProfilePanel() {
