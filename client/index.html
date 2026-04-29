@@ -298,10 +298,11 @@ async function login() {
       .classList.remove("hidden");
 
     updateProfile();
+await saveUser();
 
-    if (data.isAdmin) {
-      loadAdminPanel();
-    }
+if (data.isAdmin) {
+  loadAdminPanel();
+}
 
   } else {
     document.getElementById("loginMsg").innerText =
@@ -408,7 +409,13 @@ function hitBlackjack() {
     document.getElementById("gameMsg").innerText =
       "Bust! You lose.";
 
-    renderBlackjack(true);
+    updateProfile();
+    saveUser();
+
+    setTimeout(() => {
+      showGame("blackjack");
+    }, 1500);
+
     return;
   }
 
@@ -474,10 +481,11 @@ function finishBlackjack() {
   updateProfile();
   saveUser();
 
-  document.getElementById("gameMsg").innerText =
-    result;
+  document.getElementById("gameMsg").innerText = result;
 
-  renderBlackjack(true);
+  setTimeout(() => {
+    showGame("blackjack");
+  }, 1500);
 }
 
 /* ================= BET INPUT ================= */
@@ -906,24 +914,29 @@ function changeProfilePicture() {
 }
 
 async function changeUsername() {
-  const newUsername =
-    prompt("Enter new username:");
+  const newUsername = prompt(
+    "Enter new username:"
+  );
 
   if (!newUsername || !newUsername.trim()) return;
 
   const cleaned = newUsername.trim();
 
-  const res = await fetch(`${API}/admin/users`);
-  const users = await res.json();
+  const res = await fetch(`${API}/changeUsername`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      oldUsername: currentUser,
+      newUsername: cleaned
+    })
+  });
 
-  const taken = users.find(
-    u =>
-      u.username.toLowerCase() ===
-      cleaned.toLowerCase()
-  );
+  const text = await res.text();
 
-  if (taken) {
-    alert("That username is already taken");
+  if (text !== "Username updated") {
+    alert(text);
     return;
   }
 
@@ -935,9 +948,11 @@ async function changeUsername() {
   );
 
   updateProfile();
+  await saveUser();
 
-  alert("Username updated locally (backend route can be added next)");
+  alert("Username updated successfully");
 }
+
 function linkRoblox() {
   window.location.href = `${API}/auth/roblox?username=${currentUser}`;
 }
@@ -1127,20 +1142,19 @@ profilePicture =
 
 /* NORMAL USER AUTO LOGIN */
 if (currentUser && currentUser !== "admin") {
-  const params = new URLSearchParams(window.location.search);
-
-  if (params.get("refreshUser") === "true") {
-    refreshUserData();
-    window.history.replaceState({}, document.title, "/");
-  } else {
-    updateProfile();
-  }
-
   document.getElementById("loginBox")
     .classList.add("hidden");
 
   document.getElementById("dashboard")
     .classList.remove("hidden");
+
+  refreshUserData();
+
+  const params = new URLSearchParams(window.location.search);
+
+  if (params.get("refreshUser") === "true") {
+    window.history.replaceState({}, document.title, "/");
+  }
 }
 
 /* ADMIN AUTO LOGIN */
