@@ -283,7 +283,10 @@ app.get("/auth/roblox/callback", async (req, res) => {
       }
     );
 
-    const tokenData = await tokenResponse.json();
+    const tokenText = await tokenResponse.text();
+console.log("TOKEN RAW RESPONSE:", tokenText);
+
+const tokenData = JSON.parse(tokenText);
 console.log("TOKEN DATA:", tokenData);
     const accessToken = tokenData.access_token;
 
@@ -291,22 +294,26 @@ console.log("TOKEN DATA:", tokenData);
       return res.send("Failed to get Roblox access token");
     }
 
-    const userInfoResponse = await fetch(
-      "https://apis.roblox.com/oauth/v1/userinfo",
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
-      }
-    );
+   const userInfoResponse = await fetch(
+  "https://apis.roblox.com/oauth/v1/userinfo",
+  {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json"
+    }
+  }
+);
 
-    const robloxData = await userInfoResponse.json();
+const robloxData = await userInfoResponse.json();
+
 console.log("ROBLOX USER DATA:", robloxData);
-    user.robloxUsername =
-      robloxData.preferred_username ||
-      robloxData.name ||
-      "Linked Roblox Account";
+
+user.robloxUsername =
+  robloxData.sub ||
+  robloxData.preferred_username ||
+  robloxData.name ||
+  "Linked Roblox Account";
 
     saveUsers(users);
 
@@ -314,10 +321,13 @@ console.log("ROBLOX USER DATA:", robloxData);
       "https://dope-casino.vercel.app/?refreshUser=true"
     );
 
-  } catch (error) {
-    console.log(error);
-    return res.send("Roblox link failed");
-  }
+ } catch (error) {
+  console.log("ROBLOX FULL ERROR:", error);
+
+  return res.send(
+    `Roblox link failed: ${error.message}`
+  );
+}
 });
 
 /* ================= GET USER DATA ================= */
