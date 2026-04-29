@@ -252,8 +252,8 @@ app.get("/auth/roblox/callback", (req, res) => {
 
   saveUsers(users);
 
-  return res.redirect(
-    "https://rollbloks.netlify.app/?refreshUser=true"
+ return res.redirect(
+  "https://casino-frontend-kelpkois-projects.vercel.app/?refreshUser=true"
   );
 });
 
