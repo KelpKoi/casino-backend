@@ -304,6 +304,47 @@ function linkRoblox() {
 }
 
 /* ADMIN PANEL */
+async function loadAdminPanel() {
+  document.getElementById("adminPanel")
+    .classList.remove("hidden");
+
+  const res = await fetch(`${API}/admin/users`);
+  const users = await res.json();
+
+  let html = "";
+
+  users.forEach(user => {
+    html += `
+      <div style="
+        background:#0f172a;
+        padding:20px;
+        margin:15px 0;
+        border-radius:12px;
+        text-align:left;
+      ">
+        <h3>${user.username}</h3>
+
+        <p><strong>Balance:</strong> ${user.balance}</p>
+        <p><strong>Total Wagered:</strong> ${user.totalWagered}</p>
+        <p><strong>Roblox:</strong> ${user.robloxUsername || "Not Linked"}</p>
+
+        <button onclick="changeBalance('${user.username}', 1000)">
+          +1000
+        </button>
+
+        <button onclick="changeBalance('${user.username}', -1000)">
+          -1000
+        </button>
+
+        <button onclick="deleteUser('${user.username}')">
+          Delete Account
+        </button>
+      </div>
+    `;
+  });
+
+  document.getElementById("adminUsers").innerHTML = html;
+}
 async function changeBalance(username, amount) {
   await fetch(`${API}/admin/changeBalance`, {
     method: "POST",
