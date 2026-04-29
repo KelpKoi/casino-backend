@@ -655,9 +655,14 @@ profilePicture =
 
 /* NORMAL USER AUTO LOGIN */
 if (currentUser && currentUser !== "admin") {
-  refreshUserData();
+  const params = new URLSearchParams(window.location.search);
 
-  updateProfile();
+  if (params.get("refreshUser") === "true") {
+    refreshUserData();
+    window.history.replaceState({}, document.title, "/");
+  } else {
+    updateProfile();
+  }
 
   document.getElementById("loginBox")
     .classList.add("hidden");
