@@ -175,7 +175,7 @@ async function login() {
 
   const data = await res.json();
 
-  /* ---------- ADMIN LOGIN ---------- */
+  /* ================= ADMIN LOGIN ================= */
 
   if (data.isAdmin) {
     currentUser = "admin";
@@ -202,7 +202,7 @@ async function login() {
     return;
   }
 
-  /* ---------- NORMAL LOGIN ---------- */
+  /* ================= NORMAL USER LOGIN ================= */
 
   if (data.message !== "Login success") {
     document.getElementById("loginMsg").innerText =
