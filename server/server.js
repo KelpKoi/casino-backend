@@ -3,8 +3,6 @@
 const express = require("express");
 const fs = require("fs");
 const cors = require("cors");
-const fetch = (...args) =>
-  import("node-fetch").then(({ default: fetch }) => fetch(...args));
 const app = express();
 
 app.use(express.json());
