@@ -86,23 +86,8 @@
   <pre id="adminUsers"></pre>
 </div>
 
-  <!-- PROFILE -->
-  /* PROFILE */
-function updateProfile() {
-  document.getElementById("profileUser").innerText =
-    currentUser || "";
-
-  document.getElementById("profileBalance").innerText =
-    balance || 0;
-
-  document.getElementById("profileWagered").innerText =
-    totalWagered || 0;
-
-  document.getElementById("profileRoblox").innerText =
-    robloxUsername || "Not Linked";
-}
-
   <!-- DEPOSIT -->
+
   <div class="section">
     <h2>Deposit Credits</h2>
 
@@ -214,6 +199,21 @@ async function login() {
 
   document.getElementById("loginBox").classList.add("hidden");
   document.getElementById("dashboard").classList.remove("hidden");
+}
+
+/* PROFILE */
+function updateProfile() {
+  document.getElementById("profileUser").innerText =
+    currentUser || "";
+
+  document.getElementById("profileBalance").innerText =
+    balance || 0;
+
+  document.getElementById("profileWagered").innerText =
+    totalWagered || 0;
+
+  document.getElementById("profileRoblox").innerText =
+    robloxUsername || "Not Linked";
 }
 
 /* DEPOSIT */
