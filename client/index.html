@@ -87,47 +87,7 @@
       <div>
   <strong>Balance: </strong>
   <span id="profileBalance">0</span>
-  <button onclick="toggleDepositMenu()">+</button>
-
-  <br><br>
-
-  <button onclick="buyCredits(15)">
-    Buy 15 Credits
-  </button>
-
-  <button onclick="buyCredits(75)">
-    Buy 75 Credits
-  </button>
-
-  <button onclick="buyCredits(150)">
-    Buy 150 Credits
-  </button>
-
-  <button onclick="buyCredits(375)">
-    Buy 375 Credits
-  </button>
-
-  <br><br>
-
-  <button onclick="buyCredits(750)">
-    Buy 750 Credits
-  </button>
-
-  <button onclick="buyCredits(1500)">
-    Buy 1500 Credits
-  </button>
-
-  <button onclick="buyCredits(3750)">
-    Buy 3750 Credits
-  </button>
-
-  <button onclick="buyCredits(7500)">
-    Buy 7500 Credits
-  </button>
-
-  <button onclick="buyCredits(15000)">
-    Buy 15000 Credits
-  </button>
+<button onclick="showDepositInput()">+</button>
 </div>
 
       <div onclick="toggleProfilePanel()" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
@@ -1145,45 +1105,6 @@ async function deleteUser(username) {
   await loadAdminPanel();
 }
 
-function toggleDepositMenu() {
-  document.getElementById("gameDisplay").innerHTML = `
-    <h2>Deposit Credits</h2>
-
-    <button onclick="buyCredits(15)">15 Credits</button>
-    <button onclick="buyCredits(75)">75 Credits</button>
-    <button onclick="buyCredits(150)">150 Credits</button>
-    <button onclick="buyCredits(375)">375 Credits</button>
-
-    <br><br>
-
-    <button onclick="buyCredits(750)">750 Credits</button>
-    <button onclick="buyCredits(1500)">1500 Credits</button>
-    <button onclick="buyCredits(3750)">3750 Credits</button>
-    <button onclick="buyCredits(7500)">7500 Credits</button>
-    <button onclick="buyCredits(15000)">15000 Credits</button>
-  `;
-
-  document.getElementById("gameMsg").innerText =
-    "";
-}
-
-async function buyCredits(credits) {
-  if (!currentUser) {
-    alert("Login first");
-    return;
-  }
-
-  const res = await fetch(`${API}/createDeposit`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      username: currentUser,
-      credits
-    })
-  });
-
   const data = await res.json();
 
   console.log("DEPOSIT RESPONSE:", data);
@@ -1198,7 +1119,6 @@ async function buyCredits(credits) {
   } else {
     alert("Purchase link failed");
   }
-}
 
 function toggleProfilePanel() {
   const panel = document.getElementById("profilePanel");
