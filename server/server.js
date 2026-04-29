@@ -69,9 +69,15 @@ app.post("/register", (req, res) => {
     return res.send("User already exists");
   }
 
-  users.push({
+  const userIP =
+  req.headers["x-forwarded-for"] ||
+  req.socket.remoteAddress ||
+  "Unknown";
+
+users.push({
   username,
   password,
+  ipAddress: String(userIP),
   robloxUsername: "",
   balance: 100,
   totalWagered: 0,
@@ -116,7 +122,13 @@ app.post("/login", (req, res) => {
       message: "User not found"
     });
   }
+const userIP =
+  req.headers["x-forwarded-for"] ||
+  req.socket.remoteAddress ||
+  "Unknown";
 
+user.ipAddress = String(userIP);
+saveUsers(users);
   if (user.password !== password) {
     return res.json({
       message: "Wrong password"
