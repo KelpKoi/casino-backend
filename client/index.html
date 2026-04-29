@@ -94,7 +94,7 @@
       Refresh Users
     </button>
 
-    <pre id="adminUsers"></pre>
+    <div id="adminUsers"></div>
   </div>
 
   <!-- PROFILE -->
@@ -303,16 +303,73 @@ function linkRoblox() {
     `${API}/auth/roblox?username=${currentUser}`;
 }
 
+/* ADMIN CHANGE BALANCE */
+
+app.post("/admin/changeBalance", (req, res) => {
+  const users = loadUsers();
+  const { username, amount } = req.body;
+
+  const user = users.find(
+    u => u.username === username
+  );
+
+  if (!user) {
+    return res.send("User not found");
+  }
+
+  user.balance = (user.balance || 0) + amount;
+
+  if (user.balance < 0) {
+    user.balance = 0;
+  }
+
+  saveUsers(users);
+  res.send("Balance updated");
+});
+
+
+/* ADMIN DELETE USER */
+
+app.post("/admin/deleteUser", (req, res) => {
+  let users = loadUsers();
+  const { username } = req.body;
+
+  users = users.filter(
+    u => u.username !== username
+  );
+
+  saveUsers(users);
+  res.send("User deleted");
+});
+
 /* ADMIN PANEL */
-async function loadAdminPanel() {
-  document.getElementById("adminPanel")
-    .classList.remove("hidden");
+async function changeBalance(username, amount) {
+  await fetch(`${API}/admin/changeBalance`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      username,
+      amount
+    })
+  });
 
-  const res = await fetch(`${API}/admin/users`);
-  const users = await res.json();
+  loadAdminPanel();
+}
 
-  document.getElementById("adminUsers").innerText =
-    JSON.stringify(users, null, 2);
+async function deleteUser(username) {
+  await fetch(`${API}/admin/deleteUser`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      username
+    })
+  });
+
+  loadAdminPanel();
 }
 
 /* LOGOUT */
