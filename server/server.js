@@ -215,9 +215,9 @@ app.post("/updateUser", (req, res) => {
   user.totalWagered = Number(totalWagered) || 0;
   user.robloxUsername = robloxUsername || "";
   user.profilePicture = profilePicture || "";
-
+console.log("BEFORE SAVE:", users);
   saveUsers(users);
-
+console.log("AFTER SAVE COMPLETE");
   console.log("UPDATED USER:", user.username);
 
   res.send("Updated");
