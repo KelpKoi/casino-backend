@@ -225,9 +225,35 @@ app.get("/auth/roblox", (req, res) => {
 /* ================= ROBLOX CALLBACK ================= */
 
 app.get("/auth/roblox/callback", (req, res) => {
-  return res.send(
-    `FULL QUERY RECEIVED: ${JSON.stringify(req.query)}`
-    
+  const code = req.query.code;
+  const username = req.query.state;
+
+  if (!code) {
+    return res.send("Authorization failed");
+  }
+
+  if (!username) {
+    return res.send("No username returned from Roblox");
+  }
+
+  const users = loadUsers();
+
+  const user = users.find(
+    u =>
+      u.username.toLowerCase() ===
+      String(username).toLowerCase()
+  );
+
+  if (!user) {
+    return res.send(`User not found: ${username}`);
+  }
+
+  user.robloxUsername = "Linked Roblox Account";
+
+  saveUsers(users);
+
+  return res.redirect(
+    "https://rollbloks.netlify.app/?refreshUser=true"
   );
 });
 
