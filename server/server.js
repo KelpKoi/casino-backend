@@ -271,6 +271,67 @@ app.post("/changeUsername", (req, res) => {
   res.send("Username updated");
 });
 
+app.post("/createDeposit", (req, res) => {
+  const { username, credits } = req.body;
+
+  if (!username || !credits) {
+    return res.json({
+      error: "Missing deposit info"
+    });
+  }
+
+  let productId = "";
+
+  if (credits === 15) {
+    productId = "1195768674";
+  }
+
+  if (credits === 75) {
+    productId = "1195768673";
+  }
+
+  if (credits === 150) {
+    productId = "1195768672";
+  }
+
+  if (credits === 375) {
+    productId = "3583478719";
+  }
+
+  if (credits === 750) {
+    productId = "3583479147";
+  }
+
+  if (credits === 1500) {
+    productId = "3583479419";
+  }
+
+  if (credits === 3750) {
+    productId = "3583479554";
+  }
+
+  if (credits === 7500) {
+    productId = "3583479763";
+  }
+
+  if (credits === 15000) {
+    productId = "3583480735";
+  }
+
+  if (!productId) {
+    return res.json({
+      error: "Invalid deposit package"
+    });
+  }
+
+  const purchaseURL =
+    `https://www.roblox.com/game-pass/${productId}`;
+
+  res.json({
+    purchaseURL
+  });
+});
+
 /* ================= ROBLOX LINK PLACEHOLDER ================= */
 
 app.get("/auth/roblox", (req, res) => {
