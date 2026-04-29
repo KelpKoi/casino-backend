@@ -253,8 +253,8 @@ app.get("/auth/roblox/callback", (req, res) => {
   saveUsers(users);
 
  return res.redirect(
-  "https://casino-frontend-kelpkois-projects.vercel.app/?refreshUser=true"
-  );
+  "https://dope-casino.vercel.app/?refreshUser=true"
+);
 });
 
 /* ================= GET USER DATA ================= */
