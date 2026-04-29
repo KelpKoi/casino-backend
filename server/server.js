@@ -308,9 +308,9 @@ const robloxData = await userInfoResponse.json();
 console.log("ROBLOX USER DATA:", robloxData);
 
 user.robloxUsername =
-  robloxData.sub ||
   robloxData.preferred_username ||
   robloxData.name ||
+  robloxData.sub ||
   "Linked Roblox Account";
 
     saveUsers(users);
