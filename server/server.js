@@ -207,7 +207,8 @@ app.get("/auth/roblox", (req, res) => {
   }
 
   const clientId = "7447348537567881366";
-  const redirectUri = "https://casino-backend-nah2.onrender.com/auth/roblox/callback";
+  const redirectUri =
+  `https://casino-backend-nah2.onrender.com/auth/roblox/callback?siteUser=${encodeURIComponent(username)}`;
 
   const robloxURL =
     `https://apis.roblox.com/oauth/v1/authorize?` +
@@ -215,7 +216,7 @@ app.get("/auth/roblox", (req, res) => {
     `&redirect_uri=${encodeURIComponent(redirectUri)}` +
     `&response_type=code` +
     `&scope=openid profile` +
-    `&state=${username}`;
+    `&state=${encodeURIComponent(username)}`;
 
   res.redirect(robloxURL);
 });
@@ -223,33 +224,8 @@ app.get("/auth/roblox", (req, res) => {
 /* ================= ROBLOX CALLBACK ================= */
 
 app.get("/auth/roblox/callback", (req, res) => {
-  const code = req.query.code;
-  const username = req.query.state;
-
-  if (!code) {
-    return res.send("Authorization failed");
-  }
-
-  const users = loadUsers();
-
-  const user = users.find(
-    u => u.username === username
-  );
-
-  if (!user) {
-    return res.send("User not found");
-  }
-
-  /*
-    Temporary Roblox username placeholder.
-    Later we can replace this with the real Roblox API username.
-  */
-  user.robloxUsername = "Linked Roblox Account";
-
-  saveUsers(users);
-
-  return res.redirect(
-    "https://rollbloks.netlify.app/"
+  return res.send(
+    `FULL QUERY RECEIVED: ${JSON.stringify(req.query)}`
   );
 });
 
