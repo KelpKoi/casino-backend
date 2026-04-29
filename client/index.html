@@ -1105,20 +1105,42 @@ async function deleteUser(username) {
   await loadAdminPanel();
 }
 
-  const data = await res.json();
+function showDepositInput() {
+  document.getElementById("gameDisplay").innerHTML = `
+    <h2>Custom Deposit</h2>
 
-  console.log("DEPOSIT RESPONSE:", data);
+    <p>Enter how many credits you want to buy:</p>
 
-  if (data.error) {
-    alert(data.error);
+    <input
+      id="depositAmount"
+      type="number"
+      placeholder="Enter credits amount"
+    >
+
+    <br><br>
+
+    <button onclick="nextDepositStep()">
+      Next
+    </button>
+  `;
+
+  document.getElementById("gameMsg").innerText = "";
+}
+
+function nextDepositStep() {
+  const amount = Number(
+    document.getElementById("depositAmount")?.value
+  );
+
+  if (!amount || amount <= 0) {
+    document.getElementById("gameMsg").innerText =
+      "Enter a valid deposit amount";
     return;
   }
 
-  if (data.purchaseURL) {
-    window.open(data.purchaseURL, "_blank");
-  } else {
-    alert("Purchase link failed");
-  }
+  document.getElementById("gameMsg").innerText =
+    `Requested deposit: ${amount} credits`;
+}
 
 function toggleProfilePanel() {
   const panel = document.getElementById("profilePanel");
