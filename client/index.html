@@ -55,6 +55,15 @@
       cursor: pointer;
       font-size: 16px;
     }
+
+    pre {
+      text-align: left;
+      background: #0b1120;
+      padding: 15px;
+      border-radius: 10px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
@@ -76,18 +85,34 @@
 
 <!-- DASHBOARD -->
 <div class="dashboard hidden" id="dashboard">
-<div class="section hidden" id="adminPanel">
-  <h2>Admin Panel</h2>
 
-  <button onclick="loadAdminPanel()">
-    Refresh Users
-  </button>
+  <!-- ADMIN PANEL -->
+  <div class="section hidden" id="adminPanel">
+    <h2>Admin Panel</h2>
 
-  <pre id="adminUsers"></pre>
-</div>
+    <button onclick="loadAdminPanel()">
+      Refresh Users
+    </button>
+
+    <pre id="adminUsers"></pre>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="section">
+    <h2>Profile</h2>
+
+    <p><strong>User:</strong> <span id="profileUser"></span></p>
+    <p><strong>Roblox:</strong> <span id="profileRoblox">Not Linked</span></p>
+    <p><strong>Balance:</strong> <span id="profileBalance">0</span></p>
+    <p><strong>Total Wagered:</strong> <span id="profileWagered">0</span></p>
+
+    <button onclick="linkRoblox()">Link Roblox</button>
+    <button onclick="logout()">Logout</button>
+
+    <p id="robloxMsg"></p>
+  </div>
 
   <!-- DEPOSIT -->
-
   <div class="section">
     <h2>Deposit Credits</h2>
 
@@ -161,7 +186,7 @@ async function login() {
 
   const data = await res.json();
 
-  /* ---------- ADMIN LOGIN ---------- */
+  /* ADMIN LOGIN */
 
   if (data.isAdmin) {
     currentUser = "admin";
@@ -178,7 +203,7 @@ async function login() {
     return;
   }
 
-  /* ---------- NORMAL USER LOGIN ---------- */
+  /* NORMAL USER LOGIN */
 
   if (data.message !== "Login success") {
     document.getElementById("loginMsg").innerText = data.message;
@@ -278,8 +303,7 @@ function linkRoblox() {
     `${API}/auth/roblox?username=${currentUser}`;
 }
 
-/* LOGOUT */
-
+/* ADMIN PANEL */
 async function loadAdminPanel() {
   document.getElementById("adminPanel")
     .classList.remove("hidden");
@@ -291,6 +315,7 @@ async function loadAdminPanel() {
     JSON.stringify(users, null, 2);
 }
 
+/* LOGOUT */
 function logout() {
   localStorage.removeItem("currentUser");
   localStorage.removeItem("balance");
@@ -299,12 +324,12 @@ function logout() {
   location.reload();
 }
 
-if (currentUser) {
+/* AUTO LOGIN AFTER REFRESH */
+if (currentUser && currentUser !== "admin") {
   updateProfile();
   document.getElementById("loginBox").classList.add("hidden");
   document.getElementById("dashboard").classList.remove("hidden");
 }
-
 </script>
 
 </body>
