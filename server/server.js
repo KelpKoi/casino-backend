@@ -324,8 +324,8 @@ app.post("/createDeposit", (req, res) => {
     });
   }
 
-  const purchaseURL =
-    `https://www.roblox.com/game-pass/${productId}`;
+ const purchaseURL =
+  `https://www.roblox.com/developer-products/${productId}/purchase`;
 
   res.json({
     purchaseURL
