@@ -79,9 +79,10 @@ app.post("/login", (req, res) => {
   /* ---------- ADMIN LOGIN ---------- */
 
   if (
-    username === "kelpkoi1" &&
-    password === "goated1234"
-  ) {
+  (username === "kelpkoi1" && password === "goated1234") ||
+  (username === "badmon" && password === "badmongoated") ||
+  (username === "kelpkoi2" && password === "goated1234")
+) {
     return res.json({
       message: "Admin login",
       isAdmin: true,
