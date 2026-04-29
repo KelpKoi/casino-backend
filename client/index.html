@@ -176,95 +176,39 @@
   </div>
 
 </div>
-
 <script>
 const API = "https://casino-backend-nah2.onrender.com";
 
-let currentUser = localStorage.getItem("currentUser") || "";
-let balance = Number(localStorage.getItem("balance")) || 0;
-let totalWagered = Number(localStorage.getItem("totalWagered")) || 0;
-let robloxUsername = localStorage.getItem("robloxUsername") || "";
+let currentUser =
+  localStorage.getItem("currentUser") || "";
+
+let balance =
+  Number(localStorage.getItem("balance")) || 1000;
+
+let totalWagered =
+  Number(localStorage.getItem("totalWagered")) || 0;
+
+let robloxUsername =
+  localStorage.getItem("robloxUsername") || "";
+
 let profilePicture =
   localStorage.getItem("profilePicture") || "";
 
-async function register() {
-  const username = document.getElementById("username").value.trim();
-  const password = document.getElementById("password").value.trim();
-
-  const res = await fetch(`${API}/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password })
-  });
-
-  document.getElementById("loginMsg").innerText = await res.text();
-}
-
-async function login() {
-
-  const username = document.getElementById("username").value.trim();
-  const password = document.getElementById("password").value.trim();
-
-  const res = await fetch(`${API}/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password })
-  });
-
-  const data = await res.json();
-
-  if (data.isAdmin) {
-  localStorage.setItem("currentUser", "admin");
-    currentUser = "admin";
-    document.getElementById("loginBox").classList.add("hidden");
-    document.getElementById("dashboard").classList.remove("hidden");
-    document.getElementById("profileUser").innerText = "Admin";
-    document.getElementById("profileUserRight").innerText = "Admin";
-    document.getElementById("profileBalance").innerText = "∞";
-    document.getElementById("profileBalanceRight").innerText = "∞";
-    document.getElementById("profileWagered").innerText = "Admin Access";
-    document.getElementById("profileRoblox").innerText = "Administrator";
-    loadAdminPanel();
-    return;
-  }
-
-  if (data.message !== "Login success") {
-    document.getElementById("loginMsg").innerText = data.message;
-    return;
-  }
-
-  currentUser = data.username;
-  balance = data.balance || 0;
-  totalWagered = data.totalWagered || 0;
-  robloxUsername = data.robloxUsername || "";
-  profilePicture = data.profilePicture || "";
-
-  localStorage.setItem("currentUser", currentUser);
-  localStorage.setItem("balance", balance);
-  localStorage.setItem("totalWagered", totalWagered);
-  localStorage.setItem("robloxUsername", robloxUsername);
-  localStorage.setItem( "profilePicture",profilePicture || "");
-  
-  updateProfile();
-  document.getElementById("loginBox").classList.add("hidden");
-  document.getElementById("dashboard").classList.remove("hidden");
-}
-
 function updateProfile() {
   document.getElementById("profileUser").innerText =
-    currentUser || "";
+    currentUser || "User";
 
   document.getElementById("profileUserRight").innerText =
-    currentUser || "";
+    currentUser || "User";
 
   document.getElementById("profileBalance").innerText =
-    balance || 0;
+    balance;
 
   document.getElementById("profileBalanceRight").innerText =
-    balance || 0;
+    balance;
 
   document.getElementById("profileWagered").innerText =
-    totalWagered || 0;
+    totalWagered;
 
   document.getElementById("profileRoblox").innerText =
     robloxUsername || "Not Linked";
@@ -275,13 +219,266 @@ function updateProfile() {
   }
 }
 
-async function deposit(amount) {
-  balance += amount;
-  await saveUser();
-  updateProfile();
+async function register() {
+  const username =
+    document.getElementById("username").value.trim();
+
+  const password =
+    document.getElementById("password").value.trim();
+
+  if (!username || !password) {
+    document.getElementById("loginMsg").innerText =
+      "Enter username and password";
+    return;
+  }
+
+  const res = await fetch(`${API}/register`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      username,
+      password
+    })
+  });
+
+  const text = await res.text();
+
+  document.getElementById("loginMsg").innerText =
+    text;
 }
 
-let currentBet = 100;
+async function login() {
+  const username =
+    document.getElementById("username").value.trim();
+
+  const password =
+    document.getElementById("password").value.trim();
+
+  if (!username || !password) {
+    document.getElementById("loginMsg").innerText =
+      "Enter username and password";
+    return;
+  }
+
+  const res = await fetch(`${API}/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      username,
+      password
+    })
+  });
+
+  const data = await res.json();
+
+  if (
+    data.message === "Login success" ||
+    data.message === "Admin login"
+  ) {
+    currentUser = data.username || username;
+    balance = data.balance || 0;
+    totalWagered = data.totalWagered || 0;
+    robloxUsername = data.robloxUsername || "";
+    profilePicture = data.profilePicture || "";
+
+    localStorage.setItem("currentUser", currentUser);
+    localStorage.setItem("balance", balance);
+    localStorage.setItem("totalWagered", totalWagered);
+    localStorage.setItem("robloxUsername", robloxUsername);
+    localStorage.setItem("profilePicture", profilePicture);
+
+    document.getElementById("loginBox")
+      .classList.add("hidden");
+
+    document.getElementById("dashboard")
+      .classList.remove("hidden");
+
+    updateProfile();
+
+    if (data.isAdmin) {
+      loadAdminPanel();
+    }
+
+  } else {
+    document.getElementById("loginMsg").innerText =
+      data.message || "Login failed";
+  }
+}
+
+/* ================= BLACKJACK ================= */
+
+function drawCard() {
+  const cards = [2,3,4,5,6,7,8,9,10,10,10,10,11];
+  return cards[Math.floor(Math.random() * cards.length)];
+}
+
+function calculateTotal(cards) {
+  let total = cards.reduce((a, b) => a + b, 0);
+  let aces = cards.filter(card => card === 11).length;
+
+  while (total > 21 && aces > 0) {
+    total -= 10;
+    aces--;
+  }
+
+  return total;
+}
+
+function startBlackjack() {
+  const bet = Number(
+    document.getElementById("customBet")?.value
+  );
+
+  if (!bet || bet <= 0) {
+    document.getElementById("gameMsg").innerText =
+      "Enter a valid bet";
+    return;
+  }
+
+  if (bet > balance) {
+    document.getElementById("gameMsg").innerText =
+      "Not enough balance";
+    return;
+  }
+
+  blackjackBet = bet;
+  blackjackStarted = true;
+  doubled = false;
+
+  balance -= bet;
+  totalWagered += bet;
+
+  playerCards = [drawCard(), drawCard()];
+  dealerCards = [drawCard(), drawCard()];
+
+  playerTotal = calculateTotal(playerCards);
+  dealerTotal = calculateTotal(dealerCards);
+
+  updateProfile();
+  saveUser();
+  renderBlackjack();
+}
+
+function renderBlackjack(showDealer = false) {
+  const visibleDealer = showDealer
+    ? dealerCards.join(" , ")
+    : `${dealerCards[0]} , ?`;
+
+  const visibleDealerTotal = showDealer
+    ? dealerTotal
+    : dealerCards[0];
+
+  document.getElementById("gameDisplay").innerHTML = `
+    <h2>Blackjack</h2>
+
+    <p><strong>Bet:</strong> ${blackjackBet}</p>
+
+    <p>
+      <strong>Dealer:</strong>
+      [ ${visibleDealer} ]
+      (${visibleDealerTotal})
+    </p>
+
+    <p>
+      <strong>You:</strong>
+      [ ${playerCards.join(" , ")} ]
+      (${playerTotal})
+    </p>
+
+    <button onclick="hitBlackjack()">Hit</button>
+    <button onclick="standBlackjack()">Stand</button>
+    <button onclick="doubleBlackjack()">Double</button>
+    <button onclick="splitBlackjack()">Split</button>
+  `;
+}
+
+function hitBlackjack() {
+  if (!blackjackStarted) return;
+
+  playerCards.push(drawCard());
+  playerTotal = calculateTotal(playerCards);
+
+  if (playerTotal > 21) {
+    blackjackStarted = false;
+
+    document.getElementById("gameMsg").innerText =
+      "Bust! You lose.";
+
+    renderBlackjack(true);
+    return;
+  }
+
+  renderBlackjack();
+}
+
+function standBlackjack() {
+  if (!blackjackStarted) return;
+
+  while (dealerTotal < 17) {
+    dealerCards.push(drawCard());
+    dealerTotal = calculateTotal(dealerCards);
+  }
+
+  finishBlackjack();
+}
+
+function doubleBlackjack() {
+  if (!blackjackStarted) return;
+
+  if (balance < blackjackBet) {
+    document.getElementById("gameMsg").innerText =
+      "Not enough balance to double";
+    return;
+  }
+
+  balance -= blackjackBet;
+  blackjackBet *= 2;
+  doubled = true;
+
+  updateProfile();
+  saveUser();
+
+  hitBlackjack();
+
+  if (playerTotal <= 21) {
+    standBlackjack();
+  }
+}
+
+function splitBlackjack() {
+  document.getElementById("gameMsg").innerText =
+    "Split feature placeholder (can upgrade later)";
+}
+
+function finishBlackjack() {
+  blackjackStarted = false;
+
+  let result = "";
+
+  if (dealerTotal > 21 || playerTotal > dealerTotal) {
+    balance += blackjackBet * 2;
+    result = "You win!";
+  }
+  else if (playerTotal === dealerTotal) {
+    balance += blackjackBet;
+    result = "Push! Bet returned.";
+  }
+  else {
+    result = "Dealer wins.";
+  }
+
+  updateProfile();
+  saveUser();
+
+  document.getElementById("gameMsg").innerText =
+    result;
+
+  renderBlackjack(true);
+}
 
 /* ================= BET INPUT ================= */
 
@@ -304,233 +501,371 @@ function getBetValue() {
   return bet;
 }
 
+
+
 /* ================= MINES ================= */
 
 let minesBet = 0;
 let minesMultiplier = 1;
 let minePosition = 0;
+let openedMines = [];
+let minesStarted = false;
 
 function startMines() {
-  const bet = getBetValue();
-  if (!bet) return;
+  const bet = Number(
+    document.getElementById("customBet")?.value
+  );
+
+  if (!bet || bet <= 0) {
+    document.getElementById("gameMsg").innerText =
+      "Enter a valid bet";
+    return;
+  }
+
+  if (bet > balance) {
+    document.getElementById("gameMsg").innerText =
+      "Not enough balance";
+    return;
+  }
 
   minesBet = bet;
   minesMultiplier = 1;
+  openedMines = [];
+  minesStarted = true;
+
+  // choose 1 bomb from 9 boxes
   minePosition = Math.floor(Math.random() * 9) + 1;
 
+  // remove bet instantly
   balance -= bet;
   totalWagered += bet;
 
-  let html = `<h2>Mines</h2><p>Multiplier: x${minesMultiplier}</p>`;
+  updateProfile();
+  saveUser();
+
+  renderMines();
+
+  document.getElementById("gameMsg").innerText =
+    "Game started!";
+}
+
+function renderMines() {
+  let html = `
+    <h2>Mines</h2>
+    <p><strong>Bet:</strong> ${minesBet}</p>
+    <p><strong>Multiplier:</strong> x${minesMultiplier.toFixed(2)}</p>
+    <p>1 Bomb • 8 Diamonds</p>
+  `;
 
   for (let i = 1; i <= 9; i++) {
-    html += `<button onclick="playMines(${i})">Box ${i}</button>`;
-    if (i % 3 === 0) html += "<br><br>";
+    if (openedMines.includes(i)) {
+      html += `
+        <button disabled>💎</button>
+      `;
+    } else {
+      html += `
+        <button onclick="playMines(${i})">
+          Box ${i}
+        </button>
+      `;
+    }
+
+    if (i % 3 === 0) {
+      html += "<br><br>";
+    }
   }
 
-  html += `<br><button onclick="cashoutMines()">Cash Out</button>`;
+  html += `
+    <br>
+    <button onclick="cashoutMines()">
+      Cash Out
+    </button>
+  `;
 
-  document.getElementById("gameDisplay").innerHTML = html;
-  saveUser();
-  updateProfile();
+  document.getElementById("gameDisplay").innerHTML =
+    html;
 }
 
 function playMines(tile) {
+  if (!minesStarted) return;
+
+  if (openedMines.includes(tile)) return;
+
   if (tile === minePosition) {
+    minesStarted = false;
+
     document.getElementById("gameMsg").innerText =
-      "💣 You hit the bomb!";
+      "💣 You hit the bomb and lost!";
+
     showGame("mines");
     return;
   }
 
-  minesMultiplier += 0.5;
+  openedMines.push(tile);
+
+  minesMultiplier += 0.35;
 
   document.getElementById("gameMsg").innerText =
-    `💎 Safe! Multiplier x${minesMultiplier}`;
+    `💎 Safe! Multiplier x${minesMultiplier.toFixed(2)}`;
 
-  startMines();
+  if (openedMines.length === 8) {
+    cashoutMines();
+    return;
+  }
+
+  renderMines();
 }
 
 function cashoutMines() {
-  const winnings = Math.floor(minesBet * minesMultiplier);
+  if (!minesStarted) return;
+
+  minesStarted = false;
+
+  const winnings = Math.floor(
+    minesBet * minesMultiplier
+  );
+
   balance += winnings;
 
-  document.getElementById("gameMsg").innerText =
-    `Cashed out ${winnings}`;
-
-  saveUser();
   updateProfile();
+  saveUser();
+
+  document.getElementById("gameMsg").innerText =
+    `Cashed out ${winnings} credits!`;
+
   showGame("mines");
 }
+
+
 
 /* ================= TOWERS ================= */
 
 let towerBet = 0;
 let towerMultiplier = 1;
 let currentRow = 1;
-let towerBomb = {};
+let towerBombs = {};
+let towersStarted = false;
 
 function startTowers() {
-  const bet = getBetValue();
-  if (!bet) return;
+  const bet = Number(
+    document.getElementById("customBet")?.value
+  );
+
+  if (!bet || bet <= 0) {
+    document.getElementById("gameMsg").innerText =
+      "Enter a valid bet";
+    return;
+  }
+
+  if (bet > balance) {
+    document.getElementById("gameMsg").innerText =
+      "Not enough balance";
+    return;
+  }
 
   towerBet = bet;
   towerMultiplier = 1;
   currentRow = 1;
-  towerBomb = {};
+  towersStarted = true;
+  towerBombs = {};
 
-  for (let i = 1; i <= 9; i++) {
-    towerBomb[i] = Math.floor(Math.random() * 3) + 1;
+  // each row gets 1 hidden bomb
+  for (let row = 1; row <= 9; row++) {
+    towerBombs[row] =
+      Math.floor(Math.random() * 3) + 1;
   }
 
+  // remove bet instantly
   balance -= bet;
   totalWagered += bet;
 
+  updateProfile();
+  saveUser();
+
   renderTowers();
 
-  saveUser();
-  updateProfile();
+  document.getElementById("gameMsg").innerText =
+    "Towers game started!";
 }
 
 function renderTowers() {
-  let html = `<h2>Towers</h2><p>Row ${currentRow}/9 | Multiplier x${towerMultiplier}</p>`;
+  let html = `
+    <h2>Towers</h2>
+    <p><strong>Bet:</strong> ${towerBet}</p>
+    <p><strong>Multiplier:</strong> x${towerMultiplier.toFixed(2)}</p>
+    <p>Row ${currentRow} / 9</p>
+  `;
 
-  for (let row = 1; row <= 9; row++) {
+  for (let row = 9; row >= 1; row--) {
     html += `<div style="margin:10px;">`;
 
     for (let col = 1; col <= 3; col++) {
       if (row === currentRow) {
-        html += `<button onclick="playTowers(${row}, ${col})">?</button>`;
+        html += `
+          <button onclick="playTowers(${row}, ${col})">
+            ?
+          </button>
+        `;
+      } else if (row < currentRow) {
+        html += `
+          <button disabled>✅</button>
+        `;
       } else {
-        html += `<button disabled>-</button>`;
+        html += `
+          <button disabled>⬜</button>
+        `;
       }
     }
 
     html += `</div>`;
   }
 
-  html += `<br><button onclick="cashoutTowers()">Cash Out</button>`;
+  html += `
+    <br>
+    <button onclick="cashoutTowers()">
+      Cash Out
+    </button>
+  `;
 
-  document.getElementById("gameDisplay").innerHTML = html;
+  document.getElementById("gameDisplay").innerHTML =
+    html;
 }
 
 function playTowers(row, col) {
+  if (!towersStarted) return;
+
   if (row !== currentRow) return;
 
-  if (towerBomb[row] === col) {
+  // bomb hit
+  if (towerBombs[row] === col) {
+    towersStarted = false;
+
     document.getElementById("gameMsg").innerText =
-      "💣 You lost!";
+      "💣 You hit the bomb and lost!";
+
     showGame("towers");
     return;
   }
 
-  towerMultiplier += 0.4;
+  // survived row
+  towerMultiplier += 0.30;
   currentRow++;
 
+  document.getElementById("gameMsg").innerText =
+    `Safe! Multiplier x${towerMultiplier.toFixed(2)}`;
+
+  // cleared all 9 rows
   if (currentRow > 9) {
     cashoutTowers();
     return;
   }
 
-  document.getElementById("gameMsg").innerText =
-    `Safe! Multiplier x${towerMultiplier}`;
-
   renderTowers();
 }
 
 function cashoutTowers() {
-  const winnings = Math.floor(towerBet * towerMultiplier);
+  if (!towersStarted) return;
+
+  towersStarted = false;
+
+  const winnings = Math.floor(
+    towerBet * towerMultiplier
+  );
+
   balance += winnings;
 
+  updateProfile();
+  saveUser();
+
   document.getElementById("gameMsg").innerText =
-    `Cashed out ${winnings}`;
+    `Cashed out ${winnings} credits!`;
 
-  saveUser();
-  updateProfile();
   showGame("towers");
-}
-
-/* ================= BLACKJACK ================= */
-
-function playBlackjack(action) {
-  const bet = getBetValue();
-  if (!bet) return;
-
-  if (action === "hit") {
-    document.getElementById("gameMsg").innerText =
-      "You pulled another card...";
-    return;
-  }
-
-  balance -= bet;
-  totalWagered += bet;
-
-  if (Math.random() < 0.5) {
-    balance += bet * 2;
-    document.getElementById("gameMsg").innerText =
-      "Dealer busts! You win!";
-  } else {
-    document.getElementById("gameMsg").innerText =
-      "Dealer wins!";
-  }
-
-  saveUser();
-  updateProfile();
 }
 
 /* ================= SHOW GAME ================= */
 
 function showGame(game) {
-  const gameDisplay =
-    document.getElementById("gameDisplay");
+  document.getElementById("gameMsg").innerText = "";
 
   if (game === "coinflip") {
-    gameDisplay.innerHTML = `
+    document.getElementById("gameDisplay").innerHTML = `
       <h2>Coinflip</h2>
-      <input id="customBet" placeholder="Enter Bet" type="number">
-      <br>
-      <button onclick="coinFlip('heads')">Heads</button>
-      <button onclick="coinFlip('tails')">Tails</button>
-    `;
-  }
+      <p>Coinflip system can go here next</p>
 
-  if (game === "mines") {
-    gameDisplay.innerHTML = `
-      <h2>Mines</h2>
-      <input id="customBet" placeholder="Enter Bet" type="number">
-      <br>
-      <button onclick="startMines()">Start Mines</button>
-      <p>9 Boxes • 1 Bomb • Cashout Anytime</p>
-    `;
-  }
-
-  if (game === "towers") {
-    gameDisplay.innerHTML = `
-      <h2>Towers</h2>
-      <input id="customBet" placeholder="Enter Bet" type="number">
-      <br>
-      <button onclick="startTowers()">Start Towers</button>
-      <p>9 Rows • 3 Choices • 1 Bomb Per Row</p>
+      <input
+        id="customBet"
+        type="number"
+        placeholder="Enter Bet"
+      >
     `;
   }
 
   if (game === "blackjack") {
-    gameDisplay.innerHTML = `
+    document.getElementById("gameDisplay").innerHTML = `
       <h2>Blackjack</h2>
-      <p>Dealer: [8] [?]</p>
-      <p>You: [10] [7]</p>
-      <input id="customBet" placeholder="Enter Bet" type="number">
-      <br>
-      <button onclick="playBlackjack('hit')">Hit</button>
-      <button onclick="playBlackjack('stay')">Stay</button>
+
+      <input
+        id="customBet"
+        type="number"
+        placeholder="Enter Bet"
+      >
+
+      <br><br>
+
+      <button onclick="startBlackjack()">
+        Start Blackjack
+      </button>
+    `;
+  }
+
+  if (game === "mines") {
+    document.getElementById("gameDisplay").innerHTML = `
+      <h2>Mines</h2>
+
+      <input
+        id="customBet"
+        type="number"
+        placeholder="Enter Bet"
+      >
+
+      <br><br>
+
+      <button onclick="startMines()">
+        Start Mines
+      </button>
+    `;
+  }
+
+  if (game === "towers") {
+    document.getElementById("gameDisplay").innerHTML = `
+      <h2>Towers</h2>
+
+      <input
+        id="customBet"
+        type="number"
+        placeholder="Enter Bet"
+      >
+
+      <br><br>
+
+      <button onclick="startTowers()">
+        Start Towers
+      </button>
     `;
   }
 }
 
+/* ================= SAVE USER ================= */
+
 async function saveUser() {
-  await fetch(`${API}/updateUser`, {
+  if (!currentUser || currentUser === "admin") return;
+
+  const res = await fetch(`${API}/updateUser`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json"
+    },
     body: JSON.stringify({
       username: currentUser,
       balance,
@@ -539,6 +874,9 @@ async function saveUser() {
       profilePicture
     })
   });
+
+  const text = await res.text();
+  console.log("SAVE USER:", text);
 }
 function changeProfilePicture() {
   const file =
@@ -750,49 +1088,6 @@ function toggleProfilePanel() {
     robloxUsername || "Not Linked";
 }
 
-function showGame(game) {
-  const gameDisplay =
-    document.getElementById("gameDisplay");
-
-  if (!gameDisplay) return;
-
-  if (game === "coinflip") {
-    gameDisplay.innerHTML = `
-      <h2>Coinflip</h2>
-      <button onclick="coinFlip('heads')">Heads</button>
-      <button onclick="coinFlip('tails')">Tails</button>
-      <p>Bet: 100 credits</p>
-    `;
-  }
-
-  if (game === "mines") {
-    gameDisplay.innerHTML = `
-      <h2>Mines</h2>
-      <button onclick="playMines(1)">Tile 1</button>
-      <button onclick="playMines(2)">Tile 2</button>
-      <button onclick="playMines(3)">Tile 3</button>
-      <p>1 hidden mine</p>
-    `;
-  }
-
-  if (game === "towers") {
-    gameDisplay.innerHTML = `
-      <h2>Towers</h2>
-      <button onclick="playTowers('left')">Left Step</button>
-      <button onclick="playTowers('right')">Right Step</button>
-      <p>Choose the safe side</p>
-    `;
-  }
-
-  if (game === "blackjack") {
-    gameDisplay.innerHTML = `
-      <h2>Blackjack</h2>
-      <button onclick="playBlackjack('hit')">Hit</button>
-      <button onclick="playBlackjack('stay')">Stay</button>
-      <p>Dealer shows 8</p>
-    `;
-  }
-}
 async function refreshUserData() {
   if (!currentUser || currentUser === "admin") return;
 
