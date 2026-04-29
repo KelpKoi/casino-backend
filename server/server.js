@@ -15,22 +15,33 @@ const DATA_FILE = path.join(__dirname, "users.json");
 
 function loadUsers() {
   try {
+    // only create file if it truly does not exist
     if (!fs.existsSync(DATA_FILE)) {
-      fs.writeFileSync(DATA_FILE, "[]");
-    }
-
-    const data = fs.readFileSync(DATA_FILE, "utf8");
-
-    if (!data || data.trim() === "") {
-      fs.writeFileSync(DATA_FILE, "[]");
+      console.log("users.json missing — creating new file");
+      fs.writeFileSync(DATA_FILE, "[]", "utf8");
       return [];
     }
 
-    return JSON.parse(data);
+    const rawData = fs.readFileSync(DATA_FILE, "utf8");
+
+    // if file exists but is blank, DO NOT auto wipe silently
+    if (!rawData || rawData.trim() === "") {
+      console.log("WARNING: users.json is empty");
+      return [];
+    }
+
+    const parsed = JSON.parse(rawData);
+
+    // extra safety check
+    if (!Array.isArray(parsed)) {
+      console.log("WARNING: users.json invalid format");
+      return [];
+    }
+
+    return parsed;
 
   } catch (error) {
-    console.log("users.json error:", error);
-    fs.writeFileSync(DATA_FILE, "[]");
+    console.log("ERROR loading users.json:", error);
     return [];
   }
 }
