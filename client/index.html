@@ -283,18 +283,28 @@ async function coinFlip(choice) {
 
 /* SAVE USER */
 async function saveUser() {
-  await fetch(`${API}/updateUser`, {
+  console.log("Saving user:", {
+    username: currentUser,
+    balance: balance,
+    totalWagered: totalWagered,
+    robloxUsername: robloxUsername
+  });
+
+  const res = await fetch(`${API}/updateUser`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
       username: currentUser,
-      balance,
-      totalWagered,
-      robloxUsername
+      balance: Number(balance),
+      totalWagered: Number(totalWagered),
+      robloxUsername: robloxUsername || ""
     })
   });
+
+  const text = await res.text();
+  console.log("Update response:", text);
 }
 
 /* ROBLOX LINK */
