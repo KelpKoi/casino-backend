@@ -240,7 +240,8 @@ async function login() {
   localStorage.setItem("balance", balance);
   localStorage.setItem("totalWagered", totalWagered);
   localStorage.setItem("robloxUsername", robloxUsername);
-
+  localStorage.setItem( "profilePicture",profilePicture || "");
+  
   updateProfile();
   document.getElementById("loginBox").classList.add("hidden");
   document.getElementById("dashboard").classList.remove("hidden");
@@ -376,6 +377,8 @@ function changeProfilePicture() {
 
     document.getElementById("profilePicPreview").src =
       profilePicture;
+
+    updateProfile();
   };
 
   reader.readAsDataURL(file);
@@ -581,6 +584,8 @@ function logout() {
   location.reload();
 }
 showGame("coinflip");
+profilePicture =
+localStorage.getItem("profilePicture") || "";
 if (currentUser && currentUser !== "admin") {
   updateProfile();
   document.getElementById("loginBox").classList.add("hidden");
