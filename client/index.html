@@ -281,73 +281,250 @@ async function deposit(amount) {
   updateProfile();
 }
 
-async function coinFlip(choice) {
-  if (balance < 100) {
-    document.getElementById("gameMsg").innerText = "Not enough balance";
-    return;
+let currentBet = 100;
+
+/* ================= BET INPUT ================= */
+
+function getBetValue() {
+  const betInput = document.getElementById("customBet");
+  const bet = Number(betInput?.value || 100);
+
+  if (!bet || bet <= 0) {
+    document.getElementById("gameMsg").innerText =
+      "Enter a valid bet";
+    return null;
   }
 
-  balance -= 100;
-  totalWagered += 100;
-
-  const result = Math.random() < 0.5 ? "heads" : "tails";
-
-  if (choice === result) {
-    balance += 200;
-    document.getElementById("gameMsg").innerText = "You won!";
-  } else {
-    document.getElementById("gameMsg").innerText = "You lost!";
+  if (bet > balance) {
+    document.getElementById("gameMsg").innerText =
+      "Not enough balance";
+    return null;
   }
 
-  await saveUser();
+  return bet;
+}
+
+/* ================= MINES ================= */
+
+let minesBet = 0;
+let minesMultiplier = 1;
+let minePosition = 0;
+
+function startMines() {
+  const bet = getBetValue();
+  if (!bet) return;
+
+  minesBet = bet;
+  minesMultiplier = 1;
+  minePosition = Math.floor(Math.random() * 9) + 1;
+
+  balance -= bet;
+  totalWagered += bet;
+
+  let html = `<h2>Mines</h2><p>Multiplier: x${minesMultiplier}</p>`;
+
+  for (let i = 1; i <= 9; i++) {
+    html += `<button onclick="playMines(${i})">Box ${i}</button>`;
+    if (i % 3 === 0) html += "<br><br>";
+  }
+
+  html += `<br><button onclick="cashoutMines()">Cash Out</button>`;
+
+  document.getElementById("gameDisplay").innerHTML = html;
+  saveUser();
   updateProfile();
 }
 
 function playMines(tile) {
-  const mine = Math.floor(Math.random() * 3) + 1;
-  balance -= 100;
-  totalWagered += 100;
-
-  if (tile !== mine) {
-    balance += 180;
-    document.getElementById("gameMsg").innerText = "Safe tile!";
-  } else {
-    document.getElementById("gameMsg").innerText = "Boom!";
+  if (tile === minePosition) {
+    document.getElementById("gameMsg").innerText =
+      "💣 You hit the bomb!";
+    showGame("mines");
+    return;
   }
+
+  minesMultiplier += 0.5;
+
+  document.getElementById("gameMsg").innerText =
+    `💎 Safe! Multiplier x${minesMultiplier}`;
+
+  startMines();
+}
+
+function cashoutMines() {
+  const winnings = Math.floor(minesBet * minesMultiplier);
+  balance += winnings;
+
+  document.getElementById("gameMsg").innerText =
+    `Cashed out ${winnings}`;
+
+  saveUser();
+  updateProfile();
+  showGame("mines");
+}
+
+/* ================= TOWERS ================= */
+
+let towerBet = 0;
+let towerMultiplier = 1;
+let currentRow = 1;
+let towerBomb = {};
+
+function startTowers() {
+  const bet = getBetValue();
+  if (!bet) return;
+
+  towerBet = bet;
+  towerMultiplier = 1;
+  currentRow = 1;
+  towerBomb = {};
+
+  for (let i = 1; i <= 9; i++) {
+    towerBomb[i] = Math.floor(Math.random() * 3) + 1;
+  }
+
+  balance -= bet;
+  totalWagered += bet;
+
+  renderTowers();
 
   saveUser();
   updateProfile();
 }
 
-function playTowers(side) {
-  const safe = Math.random() < 0.5 ? "left" : "right";
-  balance -= 100;
-  totalWagered += 100;
+function renderTowers() {
+  let html = `<h2>Towers</h2><p>Row ${currentRow}/9 | Multiplier x${towerMultiplier}</p>`;
 
-  if (side === safe) {
-    balance += 200;
-    document.getElementById("gameMsg").innerText = "Safe step!";
-  } else {
-    document.getElementById("gameMsg").innerText = "Trap!";
+  for (let row = 1; row <= 9; row++) {
+    html += `<div style="margin:10px;">`;
+
+    for (let col = 1; col <= 3; col++) {
+      if (row === currentRow) {
+        html += `<button onclick="playTowers(${row}, ${col})">?</button>`;
+      } else {
+        html += `<button disabled>-</button>`;
+      }
+    }
+
+    html += `</div>`;
   }
+
+  html += `<br><button onclick="cashoutTowers()">Cash Out</button>`;
+
+  document.getElementById("gameDisplay").innerHTML = html;
+}
+
+function playTowers(row, col) {
+  if (row !== currentRow) return;
+
+  if (towerBomb[row] === col) {
+    document.getElementById("gameMsg").innerText =
+      "💣 You lost!";
+    showGame("towers");
+    return;
+  }
+
+  towerMultiplier += 0.4;
+  currentRow++;
+
+  if (currentRow > 9) {
+    cashoutTowers();
+    return;
+  }
+
+  document.getElementById("gameMsg").innerText =
+    `Safe! Multiplier x${towerMultiplier}`;
+
+  renderTowers();
+}
+
+function cashoutTowers() {
+  const winnings = Math.floor(towerBet * towerMultiplier);
+  balance += winnings;
+
+  document.getElementById("gameMsg").innerText =
+    `Cashed out ${winnings}`;
 
   saveUser();
   updateProfile();
+  showGame("towers");
 }
+
+/* ================= BLACKJACK ================= */
 
 function playBlackjack(action) {
-  balance -= 100;
-  totalWagered += 100;
+  const bet = getBetValue();
+  if (!bet) return;
 
-  if (action === "stay") {
-    balance += 180;
-    document.getElementById("gameMsg").innerText = "Dealer busts!";
+  if (action === "hit") {
+    document.getElementById("gameMsg").innerText =
+      "You pulled another card...";
+    return;
+  }
+
+  balance -= bet;
+  totalWagered += bet;
+
+  if (Math.random() < 0.5) {
+    balance += bet * 2;
+    document.getElementById("gameMsg").innerText =
+      "Dealer busts! You win!";
   } else {
-    document.getElementById("gameMsg").innerText = "You busted!";
+    document.getElementById("gameMsg").innerText =
+      "Dealer wins!";
   }
 
   saveUser();
   updateProfile();
+}
+
+/* ================= SHOW GAME ================= */
+
+function showGame(game) {
+  const gameDisplay =
+    document.getElementById("gameDisplay");
+
+  if (game === "coinflip") {
+    gameDisplay.innerHTML = `
+      <h2>Coinflip</h2>
+      <input id="customBet" placeholder="Enter Bet" type="number">
+      <br>
+      <button onclick="coinFlip('heads')">Heads</button>
+      <button onclick="coinFlip('tails')">Tails</button>
+    `;
+  }
+
+  if (game === "mines") {
+    gameDisplay.innerHTML = `
+      <h2>Mines</h2>
+      <input id="customBet" placeholder="Enter Bet" type="number">
+      <br>
+      <button onclick="startMines()">Start Mines</button>
+      <p>9 Boxes • 1 Bomb • Cashout Anytime</p>
+    `;
+  }
+
+  if (game === "towers") {
+    gameDisplay.innerHTML = `
+      <h2>Towers</h2>
+      <input id="customBet" placeholder="Enter Bet" type="number">
+      <br>
+      <button onclick="startTowers()">Start Towers</button>
+      <p>9 Rows • 3 Choices • 1 Bomb Per Row</p>
+    `;
+  }
+
+  if (game === "blackjack") {
+    gameDisplay.innerHTML = `
+      <h2>Blackjack</h2>
+      <p>Dealer: [8] [?]</p>
+      <p>You: [10] [7]</p>
+      <input id="customBet" placeholder="Enter Bet" type="number">
+      <br>
+      <button onclick="playBlackjack('hit')">Hit</button>
+      <button onclick="playBlackjack('stay')">Stay</button>
+    `;
+  }
 }
 
 async function saveUser() {
