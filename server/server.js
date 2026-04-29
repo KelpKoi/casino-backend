@@ -116,6 +116,44 @@ app.post("/login", (req, res) => {
   });
 });
 
+/* ADMIN CHANGE BALANCE */
+
+app.post("/admin/changeBalance", (req, res) => {
+  const users = loadUsers();
+  const { username, amount } = req.body;
+
+  const user = users.find(
+    u => u.username === username
+  );
+
+  if (!user) {
+    return res.send("User not found");
+  }
+
+  user.balance = (user.balance || 0) + amount;
+
+  if (user.balance < 0) {
+    user.balance = 0;
+  }
+
+  saveUsers(users);
+  res.send("Balance updated");
+});
+
+
+/* ADMIN DELETE USER */
+
+app.post("/admin/deleteUser", (req, res) => {
+  let users = loadUsers();
+  const { username } = req.body;
+
+  users = users.filter(
+    u => u.username !== username
+  );
+
+  saveUsers(users);
+  res.send("User deleted");
+});
 
 /* ================= ADMIN VIEW ALL USERS ================= */
 
