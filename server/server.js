@@ -207,8 +207,9 @@ app.get("/auth/roblox", (req, res) => {
   }
 
   const clientId = "7447348537567881366";
+
   const redirectUri =
-  `https://casino-backend-nah2.onrender.com/auth/roblox/callback?siteUser=${encodeURIComponent(username)}`;
+    "https://casino-backend-nah2.onrender.com/auth/roblox/callback";
 
   const robloxURL =
     `https://apis.roblox.com/oauth/v1/authorize?` +
@@ -226,6 +227,7 @@ app.get("/auth/roblox", (req, res) => {
 app.get("/auth/roblox/callback", (req, res) => {
   return res.send(
     `FULL QUERY RECEIVED: ${JSON.stringify(req.query)}`
+    
   );
 });
 
