@@ -3,7 +3,8 @@
 const express = require("express");
 const fs = require("fs");
 const cors = require("cors");
-
+const fetch = (...args) =>
+  import("node-fetch").then(({ default: fetch }) => fetch(...args));
 const app = express();
 
 app.use(express.json());
@@ -239,7 +240,7 @@ app.get("/auth/roblox", (req, res) => {
 
 /* ================= ROBLOX CALLBACK ================= */
 
-app.get("/auth/roblox/callback", (req, res) => {
+app.get("/auth/roblox/callback", async (req, res) => {
   const code = req.query.code;
   const username = req.query.state;
 
@@ -254,24 +255,69 @@ app.get("/auth/roblox/callback", (req, res) => {
   const users = loadUsers();
 
   const user = users.find(
-  u =>
-    String(u.username).trim().toLowerCase() ===
-    String(username).trim().toLowerCase()
-);
+    u =>
+      String(u.username).trim().toLowerCase() ===
+      String(username).trim().toLowerCase()
+  );
 
   if (!user) {
-  return res.send(
-    `User not found: ${username} | Existing users: ${users.map(u => u.username).join(", ")}`
-  );
-}
+    return res.send(`User not found: ${username}`);
+  }
 
-  user.robloxUsername = "Linked Roblox Account";
+  try {
+    const tokenResponse = await fetch(
+      "https://apis.roblox.com/oauth/v1/token",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams({
+          grant_type: "authorization_code",
+          code: code,
+          client_id: "7447348537567881366",
+          client_secret: "RBX-80aSmPCxA0OVeM2S8ci4bfhHJJbGtm_zlq_17tGKlYHsLAo-l3-za3ga0M4D0A1x",
+          redirect_uri:
+            "https://casino-backend-nah2.onrender.com/auth/roblox/callback"
+        })
+      }
+    );
 
-saveUsers(users);
+    const tokenData = await tokenResponse.json();
+console.log("TOKEN DATA:", tokenData);
+    const accessToken = tokenData.access_token;
 
-return res.redirect(
-  "https://dope-casino.vercel.app/?refreshUser=true"
-);
+    if (!accessToken) {
+      return res.send("Failed to get Roblox access token");
+    }
+
+    const userInfoResponse = await fetch(
+      "https://apis.roblox.com/oauth/v1/userinfo",
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      }
+    );
+
+    const robloxData = await userInfoResponse.json();
+console.log("ROBLOX USER DATA:", robloxData);
+    user.robloxUsername =
+      robloxData.preferred_username ||
+      robloxData.name ||
+      "Linked Roblox Account";
+
+    saveUsers(users);
+
+    return res.redirect(
+      "https://dope-casino.vercel.app/?refreshUser=true"
+    );
+
+  } catch (error) {
+    console.log(error);
+    return res.send("Roblox link failed");
+  }
 });
 
 /* ================= GET USER DATA ================= */
