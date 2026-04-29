@@ -206,9 +206,59 @@ app.get("/auth/roblox", (req, res) => {
     return res.send("Missing username");
   }
 
-  res.send(
-    `Roblox OAuth route ready for user: ${username}`
+  const clientId = "7447348537567881366";
+  const redirectUri =
+    "https://casino-backend-nah2.onrender.com/auth/roblox/callback";
+
+  const robloxURL =
+    `https://apis.roblox.com/oauth/v1/authorize?` +
+    `client_id=${clientId}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&response_type=code` +
+    `&scope=openid profile` +
+    `&state=${username}`;
+
+  res.redirect(robloxURL);
+});
+
+/* ================= ROBLOX CALLBACK ================= */
+
+app.get("/auth/roblox/callback", (req, res) => {
+  const code = req.query.code;
+  const username = req.query.state;
+
+  if (!code) {
+    return res.send("Authorization failed");
+  }
+
+  return res.send(
+    `Roblox account linked successfully for ${username}`
   );
+});
+
+/* ================= GET USER DATA ================= */
+
+app.get("/user/:username", (req, res) => {
+  const users = loadUsers();
+  const username = req.params.username;
+
+  const user = users.find(
+    u => u.username === username
+  );
+
+  if (!user) {
+    return res.json({
+      message: "User not found"
+    });
+  }
+
+  return res.json({
+    username: user.username,
+    balance: user.balance || 0,
+    totalWagered: user.totalWagered || 0,
+    robloxUsername: user.robloxUsername || "",
+    profilePicture: user.profilePicture || ""
+  });
 });
 
 /* ================= START SERVER ================= */

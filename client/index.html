@@ -201,6 +201,7 @@ async function register() {
 }
 
 async function login() {
+
   const username = document.getElementById("username").value.trim();
   const password = document.getElementById("password").value.trim();
 
@@ -213,6 +214,7 @@ async function login() {
   const data = await res.json();
 
   if (data.isAdmin) {
+  localStorage.setItem("currentUser", "admin");
     currentUser = "admin";
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("dashboard").classList.remove("hidden");
@@ -444,13 +446,49 @@ async function loadAdminPanel() {
         text-align:left;
         border:1px solid rgba(255,255,255,0.08);
       ">
-        <h3 style="margin-bottom:10px;">
-          ${user.username}
-        </h3>
+      <div style="
+  display:flex;
+  align-items:center;
+  gap:15px;
+  margin-bottom:15px;
+">
 
-        <p><strong>Balance:</strong> ${user.balance}</p>
-        <p><strong>Total Wagered:</strong> ${user.totalWagered}</p>
-        <p><strong>Roblox:</strong> ${user.robloxUsername || "Not Linked"}</p>
+ <img
+  src="${
+    user.profilePicture && user.profilePicture !== ""
+      ? user.profilePicture
+      : "https://via.placeholder.com/60"
+  }"
+  style="
+    width:60px;
+    height:60px;
+    border-radius:50%;
+    background:#334155;
+    object-fit:cover;
+    border:2px solid rgba(255,255,255,0.08);
+  "
+/>
+
+  <div>
+    <h3 style="margin:0;">
+      ${user.username}
+    </h3>
+
+    <p style="margin:5px 0 0 0;">
+      <strong>Balance:</strong> ${user.balance}
+    </p>
+
+    <p style="margin:5px 0 0 0;">
+      <strong>Total Wagered:</strong> ${user.totalWagered}
+    </p>
+
+    <p style="margin:5px 0 0 0;">
+      <strong>Roblox:</strong>
+      ${user.robloxUsername || "Not Linked"}
+    </p>
+  </div>
+
+</div>
 
         <div style="margin-top:15px;">
 
@@ -578,6 +616,29 @@ function showGame(game) {
     `;
   }
 }
+async function refreshUserData() {
+  if (!currentUser || currentUser === "admin") return;
+
+  const res = await fetch(
+    `${API}/user/${currentUser}`
+  );
+
+  const data = await res.json();
+
+  if (data.username) {
+    balance = data.balance || 0;
+    totalWagered = data.totalWagered || 0;
+    robloxUsername = data.robloxUsername || "";
+    profilePicture = data.profilePicture || "";
+
+    localStorage.setItem("balance", balance);
+    localStorage.setItem("totalWagered", totalWagered);
+    localStorage.setItem("robloxUsername", robloxUsername);
+    localStorage.setItem("profilePicture", profilePicture);
+
+    updateProfile();
+  }
+}
 function logout() {
   localStorage.removeItem("currentUser");
   localStorage.removeItem("balance");
@@ -588,12 +649,50 @@ function logout() {
   location.reload();
 }
 showGame("coinflip");
+
 profilePicture =
-localStorage.getItem("profilePicture") || "";
+  localStorage.getItem("profilePicture") || "";
+
+/* NORMAL USER AUTO LOGIN */
 if (currentUser && currentUser !== "admin") {
+  refreshUserData();
+
   updateProfile();
-  document.getElementById("loginBox").classList.add("hidden");
-  document.getElementById("dashboard").classList.remove("hidden");
+
+  document.getElementById("loginBox")
+    .classList.add("hidden");
+
+  document.getElementById("dashboard")
+    .classList.remove("hidden");
+}
+
+/* ADMIN AUTO LOGIN */
+if (currentUser === "admin") {
+  document.getElementById("loginBox")
+    .classList.add("hidden");
+
+  document.getElementById("dashboard")
+    .classList.remove("hidden");
+
+  document.getElementById("profileUser").innerText =
+    "Admin";
+
+  document.getElementById("profileUserRight").innerText =
+    "Admin";
+
+  document.getElementById("profileBalance").innerText =
+    "∞";
+
+  document.getElementById("profileBalanceRight").innerText =
+    "∞";
+
+  document.getElementById("profileWagered").innerText =
+    "Admin Access";
+
+  document.getElementById("profileRoblox").innerText =
+    "Administrator";
+
+  loadAdminPanel();
 }
 </script>
 
