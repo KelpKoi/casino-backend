@@ -9,7 +9,8 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-const DATA_FILE = "./users.json";
+const path = require("path");
+const DATA_FILE = path.join(__dirname, "users.json");
 
 /* ================= FILE SYSTEM ================= */
 
@@ -64,6 +65,8 @@ app.post("/register", (req, res) => {
 
   saveUsers(users);
 
+console.log("Saving user:", username);
+
   res.send("Account created");
 });
 
@@ -72,6 +75,21 @@ app.post("/register", (req, res) => {
 app.post("/login", (req, res) => {
   const users = loadUsers();
   const { username, password } = req.body;
+
+  /* ---------- ADMIN LOGIN ---------- */
+
+  if (
+    username === "kelpkoi1" &&
+    password === "goated1234"
+  ) {
+    return res.json({
+      message: "Admin login",
+      isAdmin: true,
+      username: "admin"
+    });
+  }
+
+  /* ---------- NORMAL USER LOGIN ---------- */
 
   const user = users.find(
     u => u.username === username
@@ -96,6 +114,15 @@ app.post("/login", (req, res) => {
     balance: user.balance || 0,
     totalWagered: user.totalWagered || 0
   });
+});
+
+
+/* ================= ADMIN VIEW ALL USERS ================= */
+
+app.get("/admin/users", (req, res) => {
+  const users = loadUsers();
+
+  res.json(users);
 });
 
 /* ================= UPDATE USER ================= */

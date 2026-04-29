@@ -76,6 +76,15 @@
 
 <!-- DASHBOARD -->
 <div class="dashboard hidden" id="dashboard">
+<div class="section hidden" id="adminPanel">
+  <h2>Admin Panel</h2>
+
+  <button onclick="loadAdminPanel()">
+    Refresh Users
+  </button>
+
+  <pre id="adminUsers"></pre>
+</div>
 
   <!-- PROFILE -->
   <div class="section">
@@ -166,8 +175,38 @@ async function login() {
 
   const data = await res.json();
 
+  /* ---------- ADMIN LOGIN ---------- */
+
+  if (data.isAdmin) {
+    currentUser = "admin";
+
+    document.getElementById("loginBox")
+      .classList.add("hidden");
+
+    document.getElementById("dashboard")
+      .classList.remove("hidden");
+
+    document.getElementById("profileUser").innerText =
+      "Admin";
+
+    document.getElementById("profileBalance").innerText =
+      "∞";
+
+    document.getElementById("profileWagered").innerText =
+      "Admin Access";
+
+    document.getElementById("profileRoblox").innerText =
+      "Administrator";
+
+    loadAdminPanel();
+    return;
+  }
+
+  /* ---------- NORMAL LOGIN ---------- */
+
   if (data.message !== "Login success") {
-    document.getElementById("loginMsg").innerText = data.message;
+    document.getElementById("loginMsg").innerText =
+      data.message;
     return;
   }
 
@@ -178,22 +217,16 @@ async function login() {
 
   updateProfile();
 
-localStorage.setItem("currentUser", currentUser);
-localStorage.setItem("balance", balance);
-localStorage.setItem("totalWagered", totalWagered);
-localStorage.setItem("robloxUsername", robloxUsername);
+  localStorage.setItem("currentUser", currentUser);
+  localStorage.setItem("balance", balance);
+  localStorage.setItem("totalWagered", totalWagered);
+  localStorage.setItem("robloxUsername", robloxUsername);
 
-  document.getElementById("loginBox").classList.add("hidden");
-  document.getElementById("dashboard").classList.remove("hidden");
-}
+  document.getElementById("loginBox")
+    .classList.add("hidden");
 
-/* PROFILE */
-function updateProfile() {
-  document.getElementById("profileUser").innerText = currentUser;
-  document.getElementById("profileBalance").innerText = balance;
-  document.getElementById("profileWagered").innerText = totalWagered;
-  document.getElementById("profileRoblox").innerText =
-    robloxUsername || "Not Linked";
+  document.getElementById("dashboard")
+    .classList.remove("hidden");
 }
 
 /* DEPOSIT */
@@ -259,6 +292,18 @@ function linkRoblox() {
 }
 
 /* LOGOUT */
+
+async function loadAdminPanel() {
+  document.getElementById("adminPanel")
+    .classList.remove("hidden");
+
+  const res = await fetch(`${API}/admin/users`);
+  const users = await res.json();
+
+  document.getElementById("adminUsers").innerText =
+    JSON.stringify(users, null, 2);
+}
+
 function logout() {
   localStorage.removeItem("currentUser");
   localStorage.removeItem("balance");
