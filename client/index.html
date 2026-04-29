@@ -175,38 +175,27 @@ async function login() {
 
   const data = await res.json();
 
-  /* ================= ADMIN LOGIN ================= */
+  /* ---------- ADMIN LOGIN ---------- */
 
   if (data.isAdmin) {
     currentUser = "admin";
 
-    document.getElementById("loginBox")
-      .classList.add("hidden");
+    document.getElementById("loginBox").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
 
-    document.getElementById("dashboard")
-      .classList.remove("hidden");
-
-    document.getElementById("profileUser").innerText =
-      "Admin";
-
-    document.getElementById("profileBalance").innerText =
-      "∞";
-
-    document.getElementById("profileWagered").innerText =
-      "Admin Access";
-
-    document.getElementById("profileRoblox").innerText =
-      "Administrator";
+    document.getElementById("profileUser").innerText = "Admin";
+    document.getElementById("profileBalance").innerText = "∞";
+    document.getElementById("profileWagered").innerText = "Admin Access";
+    document.getElementById("profileRoblox").innerText = "Administrator";
 
     loadAdminPanel();
     return;
   }
 
-  /* ================= NORMAL USER LOGIN ================= */
+  /* ---------- NORMAL USER LOGIN ---------- */
 
   if (data.message !== "Login success") {
-    document.getElementById("loginMsg").innerText =
-      data.message;
+    document.getElementById("loginMsg").innerText = data.message;
     return;
   }
 
@@ -222,11 +211,8 @@ async function login() {
   localStorage.setItem("totalWagered", totalWagered);
   localStorage.setItem("robloxUsername", robloxUsername);
 
-  document.getElementById("loginBox")
-    .classList.add("hidden");
-
-  document.getElementById("dashboard")
-    .classList.remove("hidden");
+  document.getElementById("loginBox").classList.add("hidden");
+  document.getElementById("dashboard").classList.remove("hidden");
 }
 
 /* DEPOSIT */
