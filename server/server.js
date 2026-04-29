@@ -15,20 +15,35 @@ const DATA_FILE = path.join(__dirname, "users.json");
 /* ================= FILE SYSTEM ================= */
 
 function loadUsers() {
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, "[]");
-  }
+  try {
+    if (!fs.existsSync(DATA_FILE)) {
+      fs.writeFileSync(DATA_FILE, "[]");
+    }
 
-  return JSON.parse(
-    fs.readFileSync(DATA_FILE)
-  );
+    const data = fs.readFileSync(DATA_FILE, "utf8");
+
+    if (!data || data.trim() === "") {
+      fs.writeFileSync(DATA_FILE, "[]");
+      return [];
+    }
+
+    return JSON.parse(data);
+
+  } catch (error) {
+    console.log("users.json error:", error);
+    fs.writeFileSync(DATA_FILE, "[]");
+    return [];
+  }
 }
 
 function saveUsers(users) {
   fs.writeFileSync(
     DATA_FILE,
-    JSON.stringify(users, null, 2)
+    JSON.stringify(users, null, 2),
+    "utf8"
   );
+
+  console.log("Users saved successfully");
 }
 
 /* ================= HOME ROUTE ================= */
