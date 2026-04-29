@@ -185,28 +185,40 @@ app.get("/admin/users", (req, res) => {
 app.post("/updateUser", (req, res) => {
   const users = loadUsers();
 
- const {
-  username,
-  balance,
-  totalWagered,
-  robloxUsername,
-  profilePicture
-} = req.body;
+  const {
+    username,
+    balance,
+    totalWagered,
+    robloxUsername,
+    profilePicture
+  } = req.body;
+
+  if (!username) {
+    return res.send("Missing username");
+  }
+
+  const cleanUsername =
+    String(username).trim().toLowerCase();
 
   const user = users.find(
-    u => u.username === username
+    u =>
+      String(u.username).trim().toLowerCase() ===
+      cleanUsername
   );
 
   if (!user) {
+    console.log("UPDATE FAILED: user not found:", username);
     return res.send("User not found");
   }
 
-  user.balance = balance;
-  user.totalWagered = totalWagered;
-  user.robloxUsername = robloxUsername;
+  user.balance = Number(balance) || 0;
+  user.totalWagered = Number(totalWagered) || 0;
+  user.robloxUsername = robloxUsername || "";
   user.profilePicture = profilePicture || "";
 
   saveUsers(users);
+
+  console.log("UPDATED USER:", user.username);
 
   res.send("Updated");
 });
