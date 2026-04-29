@@ -300,6 +300,7 @@ async function login() {
     updateProfile();
 await saveUser();
 
+
 if (data.isAdmin) {
   loadAdminPanel();
 }
@@ -869,6 +870,12 @@ function showGame(game) {
 async function saveUser() {
   if (!currentUser || currentUser === "admin") return;
 
+  localStorage.setItem("currentUser", currentUser);
+  localStorage.setItem("balance", balance);
+  localStorage.setItem("totalWagered", totalWagered);
+  localStorage.setItem("robloxUsername", robloxUsername);
+  localStorage.setItem("profilePicture", profilePicture);
+
   const res = await fetch(`${API}/updateUser`, {
     method: "POST",
     headers: {
@@ -876,15 +883,20 @@ async function saveUser() {
     },
     body: JSON.stringify({
       username: currentUser,
-      balance,
-      totalWagered,
-      robloxUsername,
-      profilePicture
+      balance: Number(balance) || 0,
+      totalWagered: Number(totalWagered) || 0,
+      robloxUsername: robloxUsername || "",
+      profilePicture: profilePicture || ""
     })
   });
 
   const text = await res.text();
+
   console.log("SAVE USER:", text);
+
+  if (text !== "Updated") {
+    console.log("SAVE FAILED:", text);
+  }
 }
 function changeProfilePicture() {
   const file =
@@ -949,7 +961,7 @@ async function changeUsername() {
 
   updateProfile();
   await saveUser();
-
+  await refreshUserData();
   alert("Username updated successfully");
 }
 
@@ -1081,6 +1093,22 @@ async function deleteUser(username) {
   console.log(text);
 
   await loadAdminPanel();
+}
+
+function deposit(amount) {
+  if (!currentUser || currentUser === "admin") return;
+
+  balance += amount;
+  totalWagered += 0;
+
+  localStorage.setItem("balance", balance);
+  localStorage.setItem("totalWagered", totalWagered);
+
+  updateProfile();
+  saveUser();
+
+  document.getElementById("gameMsg").innerText =
+    `Deposited ${amount} credits`;
 }
 
 function toggleProfilePanel() {
