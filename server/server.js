@@ -131,12 +131,12 @@ app.get("/", (req, res) => {
 app.post("/register", (req, res) => {
   const users = loadUsers();
   const { username, password } = req.body;
-  const cleanUsername =
-  username.trim().toLowerCase();
 
-if (BANNED_USERNAMES.includes(cleanUsername)) {
-  return res.send("Username not allowed");
-}
+  const cleanUsername = username.trim().toLowerCase();
+
+  if (BANNED_USERNAMES.includes(cleanUsername)) {
+    return res.send("Username not allowed");
+  }
 
   if (!username || !password) {
     return res.send("Fill all fields");
@@ -151,20 +151,28 @@ if (BANNED_USERNAMES.includes(cleanUsername)) {
   }
 
   const userIP =
-  req.headers["x-forwarded-for"] ||
-  req.socket.remoteAddress ||
-  "Unknown";
+    req.headers["x-forwarded-for"] ||
+    req.socket.remoteAddress ||
+    "Unknown";
 
-users.push({
-  username,
-  password,
-  ipAddress: String(userIP),
-  robloxUsername: "",
-  balance: 100,
-  totalWagered: 0,
-  profilePicture: "",
-  banned: false
+  users.push({
+    username,
+    password,
+    ipAddress: String(userIP),
+    robloxUsername: "",
+    balance: 100,
+    totalWagered: 0,
+    profilePicture: "",
+    banned: false
+  });
+
+  saveUsers(users);
+
+  res.send("Account created");
 });
+
+
+/* ================= REGISTER (SUPABASE) ================= */
 
 app.post("/register2", async (req, res) => {
   const { username, password } = req.body;
@@ -177,7 +185,7 @@ app.post("/register2", async (req, res) => {
 
   if (existing) return res.send("User already exists");
 
-  await supabase.from("users").insert([{
+  const { error } = await supabase.from("users").insert([{
     username,
     password,
     ipAddress: req.ip,
@@ -188,14 +196,12 @@ app.post("/register2", async (req, res) => {
     banned: false
   }]);
 
+  if (error) {
+    console.log("SUPABASE ERROR:", error);
+    return res.send("Error creating account");
+  }
+
   res.send("Account created (supabase)");
-});
-
-saveUsers(users);
-console.log("REGISTER SAVED:", users.length);
-console.log("Saving user:", username);
-
-  res.send("Account created");
 });
 
 /* ================= LOGIN ================= */
@@ -204,40 +210,13 @@ app.post("/login", (req, res) => {
   const users = loadUsers();
   const { username, password } = req.body;
 
-  app.post("/login2", async (req, res) => {
-  const { username, password } = req.body;
-
-  const { data: user } = await supabase
-    .from("users")
-    .select("*")
-    .eq("username", username)
-    .single();
-
-  if (!user) return res.json({ message: "User not found" });
-
-  if (user.banned)
-    return res.json({ message: "Banned" });
-
-  if (user.password !== password)
-    return res.json({ message: "Wrong password" });
-
-  return res.json({
-    message: "Login success",
-    username: user.username,
-    balance: user.balance,
-    totalWagered: user.totalWagered,
-    robloxUsername: user.robloxUsername,
-    profilePicture: user.profilePicture
-  });
-});
-
   /* ---------- ADMIN LOGIN ---------- */
 
   if (
-  (username === "kelpkoi1" && password === "goated1234") ||
-  (username === "badmon" && password === "Joell0726") ||
-  (username === "kelpkoi2" && password === "goated1234")
-) {
+    (username === "kelpkoi1" && password === "goated1234") ||
+    (username === "badmon" && password === "Joell0726") ||
+    (username === "kelpkoi2" && password === "goated1234")
+  ) {
     return res.json({
       message: "Admin login",
       isAdmin: true,
@@ -256,18 +235,21 @@ app.post("/login", (req, res) => {
       message: "User not found"
     });
   }
-const userIP =
-  req.headers["x-forwarded-for"] ||
-  req.socket.remoteAddress ||
-  "Unknown";
 
-user.ipAddress = String(userIP);
-saveUsers(users);
-if (user.banned) {
-  return res.json({
-    message: "This account is banned"
-  });
-}
+  const userIP =
+    req.headers["x-forwarded-for"] ||
+    req.socket.remoteAddress ||
+    "Unknown";
+
+  user.ipAddress = String(userIP);
+  saveUsers(users);
+
+  if (user.banned) {
+    return res.json({
+      message: "This account is banned"
+    });
+  }
+
   if (user.password !== password) {
     return res.json({
       message: "Wrong password"
@@ -275,13 +257,47 @@ if (user.banned) {
   }
 
   return res.json({
-  message: "Login success",
-  username: user.username,
-  robloxUsername: user.robloxUsername || "",
-  balance: user.balance || 0,
-  totalWagered: user.totalWagered || 0,
-  profilePicture: user.profilePicture || ""
+    message: "Login success",
+    username: user.username,
+    robloxUsername: user.robloxUsername || "",
+    balance: user.balance || 0,
+    totalWagered: user.totalWagered || 0,
+    profilePicture: user.profilePicture || ""
+  });
 });
+
+
+/* ================= LOGIN (SUPABASE) ================= */
+
+app.post("/login2", async (req, res) => {
+  const { username, password } = req.body;
+
+  const { data: user, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("username", username)
+    .single();
+
+  if (error || !user) {
+    return res.json({ message: "User not found" });
+  }
+
+  if (user.banned) {
+    return res.json({ message: "Banned" });
+  }
+
+  if (user.password !== password) {
+    return res.json({ message: "Wrong password" });
+  }
+
+  return res.json({
+    message: "Login success",
+    username: user.username,
+    balance: user.balance,
+    totalWagered: user.totalWagered,
+    robloxUsername: user.robloxUsername,
+    profilePicture: user.profilePicture
+  });
 });
 
 /* ADMIN CHANGE BALANCE */
