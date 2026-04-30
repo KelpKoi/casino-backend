@@ -8,7 +8,7 @@ app.use(cors());
 
 const supabase = createClient(
   "https://ehrwgafswlrnadsjqiwt.supabase.co",
-  "YOUR_SUPABASE_ANON_KEY"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVocndnYWZzd2xybmFkc2pxaXd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1MTA4MDUsImV4cCI6MjA5MzA4NjgwNX0.DPifZcnnCalNNcEVgPxOzkox33A1lCAkWQQk5Igqwac"
 );
 
 /* ================= HOME ================= */
