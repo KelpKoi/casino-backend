@@ -9,7 +9,7 @@ app.use(express.json());
 app.use(cors());
 
 const path = require("path");
-const DATA_FILE = path.join(__dirname, "users.json");
+const DATA_FILE = path.join(process.cwd(), "server", "users.json");
 const BANNED_USERNAMES = [
   "admin",
   "owner",
@@ -29,45 +29,50 @@ const BANNED_USERNAMES = [
 
 function loadUsers() {
   try {
-    // only create file if it truly does not exist
     if (!fs.existsSync(DATA_FILE)) {
-      console.log("users.json missing — creating new file");
-      fs.writeFileSync(DATA_FILE, "[]", "utf8");
+      console.log("CRITICAL: users.json missing — NOT recreating");
       return [];
     }
 
     const rawData = fs.readFileSync(DATA_FILE, "utf8");
 
-    // if file exists but is blank, DO NOT auto wipe silently
     if (!rawData || rawData.trim() === "") {
-      console.log("WARNING: users.json is empty");
+      console.log("CRITICAL: users.json empty");
       return [];
     }
 
     const parsed = JSON.parse(rawData);
 
-    // extra safety check
     if (!Array.isArray(parsed)) {
-      console.log("WARNING: users.json invalid format");
+      console.log("CRITICAL: users.json corrupted");
       return [];
     }
 
     return parsed;
 
   } catch (error) {
-    console.log("ERROR loading users.json:", error);
+    console.log("ERROR loading users:", error);
     return [];
   }
 }
 
 function saveUsers(users) {
-  fs.writeFileSync(
-    DATA_FILE,
-    JSON.stringify(users, null, 2),
-    "utf8"
-  );
+  try {
+    fs.writeFileSync(
+      DATA_FILE,
+      JSON.stringify(users, null, 2),
+      "utf8"
+    );
 
-  console.log("Users saved successfully");
+    console.log("Users saved successfully");
+
+    // VERIFY WRITE
+    const verify = fs.readFileSync(DATA_FILE, "utf8");
+    console.log("VERIFY FILE CONTENT:", verify);
+
+  } catch (err) {
+    console.log("SAVE ERROR:", err);
+  }
 }
 
 /* ================= HOME ROUTE ================= */
@@ -116,8 +121,8 @@ users.push({
   banned: false
 });
 
-  saveUsers(users);
-
+saveUsers(users);
+console.log("REGISTER SAVED:", users.length);
 console.log("Saving user:", username);
 
   res.send("Account created");
@@ -471,6 +476,17 @@ app.get("/user/:username", (req, res) => {
     robloxUsername: user.robloxUsername || "",
     profilePicture: user.profilePicture || ""
   });
+});
+
+/* ================= DEBUG USERS ================= */
+
+app.get("/debug/users", (req, res) => {
+  try {
+    const raw = fs.readFileSync(DATA_FILE, "utf8");
+    res.send(raw);
+  } catch (err) {
+    res.send("ERROR READING FILE: " + err.message);
+  }
 });
 
 /* ================= START SERVER ================= */

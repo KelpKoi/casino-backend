@@ -317,6 +317,7 @@ async function login() {
 
     updateProfile();
 await saveUser();
+await refreshUserData();
 
 
 if (data.isAdmin) {
@@ -963,35 +964,41 @@ function showGame(game) {
 /* ================= SAVE USER ================= */
 
 async function saveUser() {
-  if (!currentUser || currentUser === "admin") return;
+  if (!currentUser) return;
 
+  try {
+    const res = await fetch(`${API}/updateUser`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        username: currentUser,
+        balance: Number(balance) || 0,
+        totalWagered: Number(totalWagered) || 0,
+        robloxUsername: robloxUsername || "",
+        profilePicture: profilePicture || ""
+      })
+    });
+
+    const text = await res.text();
+
+    console.log("SAVE USER RESPONSE:", text);
+
+    if (text !== "Updated") {
+      console.log("SAVE FAILED:", text);
+    }
+
+  } catch (err) {
+    console.log("SAVE ERROR:", err);
+  }
+
+  // always update local backup
   localStorage.setItem("currentUser", currentUser);
   localStorage.setItem("balance", balance);
   localStorage.setItem("totalWagered", totalWagered);
   localStorage.setItem("robloxUsername", robloxUsername);
   localStorage.setItem("profilePicture", profilePicture);
-
-  const res = await fetch(`${API}/updateUser`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      username: currentUser,
-      balance: Number(balance) || 0,
-      totalWagered: Number(totalWagered) || 0,
-      robloxUsername: robloxUsername || "",
-      profilePicture: profilePicture || ""
-    })
-  });
-
-  const text = await res.text();
-
-  console.log("SAVE USER:", text);
-
-  if (text !== "Updated") {
-    console.log("SAVE FAILED:", text);
-  }
 }
 function changeProfilePicture() {
   const file =
