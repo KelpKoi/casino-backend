@@ -9,7 +9,11 @@ app.use(express.json());
 app.use(cors());
 
 const path = require("path");
-const DATA_FILE = path.join(process.cwd(), "server", "users.json");
+const DATA_FILE = path.join(__dirname, "./users.json");
+if (!fs.existsSync(DATA_FILE)) {
+  console.log("CREATING users.json FILE");
+  fs.writeFileSync(DATA_FILE, "[]", "utf8");
+}
 const BANNED_USERNAMES = [
   "admin",
   "owner",
