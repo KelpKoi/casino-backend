@@ -250,7 +250,7 @@ async function register() {
     return;
   }
 
-  const res = await fetch(`${API}/register`, {
+  const res = await fetch(`${API}/register2`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -280,7 +280,7 @@ async function login() {
     return;
   }
 
-  const res = await fetch(`${API}/login`, {
+  const res = await fetch(`${API}/login2`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -651,14 +651,35 @@ function playMines(tile) {
   if (openedMines.includes(tile)) return;
 
   if (tile === minePosition) {
-    minesStarted = false;
+  minesStarted = false;
 
-    document.getElementById("gameMsg").innerText =
-      "💣 You hit the bomb and lost!";
+  // show all tiles
+  let html = `
+    <h2>Mines</h2>
+    <p><strong>Bet:</strong> ${minesBet}</p>
+    <p><strong>Multiplier:</strong> x${minesMultiplier.toFixed(2)}</p>
+    <p>💣 You hit the bomb!</p>
+  `;
 
-    showGame("mines");
-    return;
+  for (let i = 1; i <= 9; i++) {
+    if (i === minePosition) {
+      html += `<button disabled>💣</button>`;
+    } else {
+      html += `<button disabled>💎</button>`;
+    }
+
+    if (i % 3 === 0) html += "<br><br>";
   }
+
+  html += `<button onclick="showGame('mines')">Reset</button>`;
+
+  document.getElementById("gameDisplay").innerHTML = html;
+
+  document.getElementById("gameMsg").innerText =
+    "You lost! Press reset.";
+
+  return;
+}
 
   openedMines.push(tile);
 
@@ -796,15 +817,41 @@ function playTowers(row, col) {
   if (row !== currentRow) return;
 
   // bomb hit
-  if (towerBombs[row] === col) {
-    towersStarted = false;
+ if (towerBombs[row] === col) {
+  towersStarted = false;
 
-    document.getElementById("gameMsg").innerText =
-      "💣 You hit the bomb and lost!";
+  let html = `
+    <h2>Towers</h2>
+    <p><strong>Bet:</strong> ${towerBet}</p>
+    <p><strong>Multiplier:</strong> x${towerMultiplier.toFixed(2)}</p>
+    <p>💣 You hit the bomb!</p>
+  `;
 
-    showGame("towers");
-    return;
+  for (let r = 9; r >= 1; r--) {
+    html += `<div style="margin:10px;">`;
+
+    for (let c = 1; c <= 3; c++) {
+      if (r === row && c === col) {
+        html += `<button disabled>💣</button>`;
+      } else if (r < currentRow) {
+        html += `<button disabled>✅</button>`;
+      } else {
+        html += `<button disabled>⬜</button>`;
+      }
+    }
+
+    html += `</div>`;
   }
+
+  html += `<button onclick="showGame('towers')">Reset</button>`;
+
+  document.getElementById("gameDisplay").innerHTML = html;
+
+  document.getElementById("gameMsg").innerText =
+    "You lost! Press reset.";
+
+  return;
+}
 
   // survived row
   towerMultiplier += 0.30;
@@ -1075,7 +1122,7 @@ async function loadAdminPanel() {
   document.getElementById("adminPanel")
     .classList.remove("hidden");
 
-  const res = await fetch(`${API}/admin/users`);
+  const res = await fetch(`${API}/admin/users2`);
   const users = await res.json();
 
   let html = "";
