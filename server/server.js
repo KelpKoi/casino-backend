@@ -44,7 +44,14 @@ app.get("/auth/roblox/callback", async (req, res) => {
       })
     });
 
-    const tokenData = await tokenRes.json();
+  const tokenData = await tokenRes.json();
+console.log("TOKEN RESPONSE:", tokenData);
+
+if (!tokenData.access_token) {
+  return res.send("OAuth failed: " + JSON.stringify(tokenData));
+}
+
+const accessToken = tokenData.access_token;
     const accessToken = tokenData.access_token;
 
     const userRes = await fetch("https://apis.roblox.com/oauth/v1/userinfo", {
@@ -53,7 +60,12 @@ app.get("/auth/roblox/callback", async (req, res) => {
       }
     });
 
-    const userData = await userRes.json();
+   const userData = await userRes.json();
+console.log("USER DATA:", userData);
+
+if (!userData.name) {
+  return res.send("Failed to get Roblox user: " + JSON.stringify(userData));
+}
 
     // SAVE TO SUPABASE
     await supabase
@@ -67,9 +79,9 @@ app.get("/auth/roblox/callback", async (req, res) => {
     res.redirect("https://dope-casino.vercel.app/"); // <-- CHANGE THIS
 
   } catch (err) {
-    console.log(err);
-    res.send("OAuth failed");
-  }
+  console.log("OAUTH ERROR:", err);
+  res.send("OAuth failed: " + err.message);
+}
 });
 
 /* ================= HOME ================= */
