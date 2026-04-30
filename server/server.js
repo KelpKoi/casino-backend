@@ -18,7 +18,7 @@ app.get("/auth/roblox", (req, res) => {
 
   const redirectUri = "https://casino-backend-nah2.onrender.com/auth/roblox/callback";
 
-  const url = `https://apis.roblox.com/oauth/v1/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid profile&state=${username}`;
+  const url = `https://apis.roblox.com/oauth/v1/authorize?client_id=7447348537567881366&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid profile&state=${username}`;
 
   res.redirect(url);
 });
