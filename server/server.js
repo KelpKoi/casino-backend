@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const express = require("express");
 const cors = require("cors");
 
@@ -10,6 +11,66 @@ const supabase = createClient(
   "https://ehrwgafswlrnadsjqiwt.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVocndnYWZzd2xybmFkc2pxaXd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1MTA4MDUsImV4cCI6MjA5MzA4NjgwNX0.DPifZcnnCalNNcEVgPxOzkox33A1lCAkWQQk5Igqwac"
 );
+
+
+app.get("/auth/roblox", (req, res) => {
+  const username = req.query.username;
+
+  const redirectUri = "https://casino-backend-nah2.onrender.com/auth/roblox/callback";
+
+  const url = `https://apis.roblox.com/oauth/v1/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid profile&state=${username}`;
+
+  res.redirect(url);
+});
+
+app.get("/auth/roblox/callback", async (req, res) => {
+  const code = req.query.code;
+  const username = req.query.state;
+
+  if (!code) return res.send("No code");
+
+  try {
+    const tokenRes = await fetch("https://apis.roblox.com/oauth/v1/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        code: code,
+        client_id: "7447348537567881366",
+        client_secret: "RBX-80aSmPCxA0OVeM2S8ci4bfGbNAEEww6Eqcb191IzOzczXjB_Om--1UrYCHU3pzsX",
+        redirect_uri: "https://casino-backend-nah2.onrender.com/auth/roblox/callback"
+      })
+    });
+
+    const tokenData = await tokenRes.json();
+    const accessToken = tokenData.access_token;
+
+    const userRes = await fetch("https://apis.roblox.com/oauth/v1/userinfo", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    });
+
+    const userData = await userRes.json();
+
+    // SAVE TO SUPABASE
+    await supabase
+      .from("users")
+      .update({
+        robloxUsername: userData.name
+      })
+      .eq("username", username);
+
+    // redirect back to your site
+    res.redirect("https://dope-casino.vercel.app/"); // <-- CHANGE THIS
+
+  } catch (err) {
+    console.log(err);
+    res.send("OAuth failed");
+  }
+});
 
 /* ================= HOME ================= */
 app.get("/", (req, res) => {
