@@ -1,179 +1,22 @@
-// server/server.js
 const { createClient } = require('@supabase/supabase-js');
-
-const supabase = createClient(
-  "https://ehrwgafswlrnadsjqiwt.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVocndnYWZzd2xybmFkc2pxaXd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1MTA4MDUsImV4cCI6MjA5MzA4NjgwNX0.DPifZcnnCalNNcEVgPxOzkox33A1lCAkWQQk5Igqwac"
-);
 const express = require("express");
-const fs = require("fs");
 const cors = require("cors");
-const app = express();
 
+const app = express();
 app.use(express.json());
 app.use(cors());
 
-const path = require("path");
-const DATA_FILE = path.join(__dirname, "./users.json");
-const BACKUP_FILE = path.join(__dirname, "users_backup.json");
-function restoreIfNeeded() {
-  try {
-    const mainExists = fs.existsSync(DATA_FILE);
-    const backupExists = fs.existsSync(BACKUP_FILE);
+const supabase = createClient(
+  "https://ehrwgafswlrnadsjqiwt.supabase.co",
+  "YOUR_SUPABASE_ANON_KEY"
+);
 
-    if (!backupExists) return;
-
-    const backupRaw = fs.readFileSync(BACKUP_FILE, "utf8");
-
-    if (!backupRaw || backupRaw.trim() === "[]") {
-      console.log("BACKUP EMPTY — SKIPPING RESTORE");
-      return;
-    }
-
-    if (!mainExists) {
-      console.log("RESTORING FROM BACKUP (missing file)");
-      fs.writeFileSync(DATA_FILE, backupRaw, "utf8");
-      return;
-    }
-
-    const mainRaw = fs.readFileSync(DATA_FILE, "utf8");
-
-    if (!mainRaw || mainRaw.trim() === "[]") {
-      console.log("MAIN EMPTY — RESTORING BACKUP");
-      fs.writeFileSync(DATA_FILE, backupRaw, "utf8");
-    }
-
-  } catch (err) {
-    console.log("RESTORE ERROR:", err);
-  }
-}
-
-// run on startup
-restoreIfNeeded();
-if (!fs.existsSync(DATA_FILE)) {
-  console.log("CREATING users.json FILE");
-  fs.writeFileSync(DATA_FILE, "[]", "utf8");
-}
-const BANNED_USERNAMES = [
-  "admin",
-  "owner",
-  "mod",
-  "staff",
-  "support",
-  "casino",
-  "roblox",
-  "system",
-  "null",
-  "kelpkoi1",
-  "kelpkoi2",
-  "badmon"
-];
-
-/* ================= FILE SYSTEM ================= */
-
-function loadUsers() {
-  try {
-    if (!fs.existsSync(DATA_FILE)) {
-      console.log("CRITICAL: users.json missing — NOT recreating");
-      return [];
-    }
-
-    const rawData = fs.readFileSync(DATA_FILE, "utf8");
-
-    if (!rawData || rawData.trim() === "") {
-      console.log("CRITICAL: users.json empty");
-      return [];
-    }
-
-    const parsed = JSON.parse(rawData);
-
-    if (!Array.isArray(parsed)) {
-      console.log("CRITICAL: users.json corrupted");
-      return [];
-    }
-
-    return parsed;
-
-  } catch (error) {
-    console.log("ERROR loading users:", error);
-    return [];
-  }
-}
-
-function saveUsers(users) {
-  try {
-    const data = JSON.stringify(users, null, 2);
-
-    // always save main file
-    fs.writeFileSync(DATA_FILE, data, "utf8");
-
-    // ❗ ONLY backup if users exist
-    if (users.length > 0) {
-      fs.writeFileSync(BACKUP_FILE, data, "utf8");
-      console.log("Users + backup saved");
-    } else {
-      console.log("Skipped backup (empty data)");
-    }
-
-  } catch (err) {
-    console.log("SAVE ERROR:", err);
-  }
-}
-
-/* ================= HOME ROUTE ================= */
-
+/* ================= HOME ================= */
 app.get("/", (req, res) => {
-  res.send("Casino backend is live");
+  res.send("Casino backend running");
 });
 
 /* ================= REGISTER ================= */
-
-app.post("/register", (req, res) => {
-  const users = loadUsers();
-  const { username, password } = req.body;
-
-  const cleanUsername = username.trim().toLowerCase();
-
-  if (BANNED_USERNAMES.includes(cleanUsername)) {
-    return res.send("Username not allowed");
-  }
-
-  if (!username || !password) {
-    return res.send("Fill all fields");
-  }
-
-  const existingUser = users.find(
-    u => u.username === username
-  );
-
-  if (existingUser) {
-    return res.send("User already exists");
-  }
-
-  const userIP =
-    req.headers["x-forwarded-for"] ||
-    req.socket.remoteAddress ||
-    "Unknown";
-
-  users.push({
-    username,
-    password,
-    ipAddress: String(userIP),
-    robloxUsername: "",
-    balance: 100,
-    totalWagered: 0,
-    profilePicture: "",
-    banned: false
-  });
-
-  saveUsers(users);
-
-  res.send("Account created");
-});
-
-
-/* ================= REGISTER (SUPABASE) ================= */
-
 app.post("/register2", async (req, res) => {
   const { username, password } = req.body;
 
@@ -196,22 +39,16 @@ app.post("/register2", async (req, res) => {
     banned: false
   }]);
 
-  if (error) {
-  console.log("SUPABASE ERROR:", error);
-  return res.json(error);
-}
+  if (error) return res.json(error);
 
-  res.send("Account created (supabase)");
+  res.send("Account created");
 });
 
 /* ================= LOGIN ================= */
-
-app.post("/login", (req, res) => {
-  const users = loadUsers();
+app.post("/login2", async (req, res) => {
   const { username, password } = req.body;
 
-  /* ---------- ADMIN LOGIN ---------- */
-
+  // ADMIN LOGIN
   if (
     (username === "kelpkoi1" && password === "goated1234") ||
     (username === "badmon" && password === "Joell0726") ||
@@ -224,71 +61,15 @@ app.post("/login", (req, res) => {
     });
   }
 
-  /* ---------- NORMAL USER LOGIN ---------- */
-
-  const user = users.find(
-    u => u.username === username
-  );
-
-  if (!user) {
-    return res.json({
-      message: "User not found"
-    });
-  }
-
-  const userIP =
-    req.headers["x-forwarded-for"] ||
-    req.socket.remoteAddress ||
-    "Unknown";
-
-  user.ipAddress = String(userIP);
-  saveUsers(users);
-
-  if (user.banned) {
-    return res.json({
-      message: "This account is banned"
-    });
-  }
-
-  if (user.password !== password) {
-    return res.json({
-      message: "Wrong password"
-    });
-  }
-
-  return res.json({
-    message: "Login success",
-    username: user.username,
-    robloxUsername: user.robloxUsername || "",
-    balance: user.balance || 0,
-    totalWagered: user.totalWagered || 0,
-    profilePicture: user.profilePicture || ""
-  });
-});
-
-
-/* ================= LOGIN (SUPABASE) ================= */
-
-app.post("/login2", async (req, res) => {
-  const { username, password } = req.body;
-
-  const { data: user, error } = await supabase
+  const { data: user } = await supabase
     .from("users")
     .select("*")
     .eq("username", username)
     .single();
 
-  if (error || !user) {
-    return res.json({ message: "User not found" });
-  }
-
-  if (user.banned) {
-    return res.json({ message: "Banned" });
-  }
-
-  if (user.password !== password) {
-    return res.json({ message: "Wrong password" });
-  }
+  if (!user) return res.json({ message: "User not found" });
+  if (user.banned) return res.json({ message: "Banned" });
+  if (user.password !== password) return res.json({ message: "Wrong password" });
 
   return res.json({
     message: "Login success",
@@ -300,344 +81,94 @@ app.post("/login2", async (req, res) => {
   });
 });
 
-/* ADMIN CHANGE BALANCE */
-
-app.post("/admin/changeBalance", (req, res) => {
-  const users = loadUsers();
-  const { username, amount } = req.body;
-
-  const user = users.find(
-    u => u.username === username
-  );
-
-  if (!user) {
-    return res.send("User not found");
-  }
-
-  user.balance = (user.balance || 0) + amount;
-
-  if (user.balance < 0) {
-    user.balance = 0;
-  }
-
-  saveUsers(users);
-  res.send("Balance updated");
-});
-
-
-/* ADMIN DELETE USER */
-
-app.post("/admin/deleteUser", (req, res) => {
-  let users = loadUsers();
-  const { username } = req.body;
-
-  users = users.filter(
-    u => u.username !== username
-  );
-
-  saveUsers(users);
-  res.send("User deleted");
-});
-
-/* ADMIN BAN/UNBAN */
-
-app.post("/admin/toggleBan", (req, res) => {
-  const users = loadUsers();
-  const { username } = req.body;
-
-  const user = users.find(
-    u => u.username === username
-  );
-
-  if (!user) {
-    return res.send("User not found");
-  }
-
-  user.banned = !user.banned;
-
-  saveUsers(users);
-
-  res.send(
-    user.banned ? "User banned" : "User unbanned"
-  );
-});
-
-/* ================= ADMIN VIEW ALL USERS ================= */
-
-app.get("/admin/users", (req, res) => {
-  const users = loadUsers();
-
-  res.json(users);
-});
-
-app.get("/admin/users2", async (req, res) => {
-  const { data } = await supabase
-    .from("users")
-    .select("*");
-
-  res.json(data);
-});
-
 /* ================= UPDATE USER ================= */
+app.post("/updateUser2", async (req, res) => {
+  const { username, balance, totalWagered, robloxUsername, profilePicture } = req.body;
 
-app.post("/updateUser", (req, res) => {
-  const users = loadUsers();
-
-  const {
-    username,
-    balance,
-    totalWagered,
-    robloxUsername,
-    profilePicture
-  } = req.body;
-
-  if (!username) {
-    return res.send("Missing username");
-  }
-
-  const cleanUsername =
-    String(username).trim().toLowerCase();
-
-  const user = users.find(
-    u =>
-      String(u.username).trim().toLowerCase() ===
-      cleanUsername
-  );
-
-  if (!user) {
-    console.log("UPDATE FAILED: user not found:", username);
-    return res.send("User not found");
-  }
-
-  user.balance = Number(balance) || 0;
-  user.totalWagered = Number(totalWagered) || 0;
-  user.robloxUsername = robloxUsername || "";
-  user.profilePicture = profilePicture || "";
-console.log("BEFORE SAVE:", users);
-  saveUsers(users);
-console.log("AFTER SAVE COMPLETE");
-  console.log("UPDATED USER:", user.username);
+  await supabase
+    .from("users")
+    .update({ balance, totalWagered, robloxUsername, profilePicture })
+    .eq("username", username);
 
   res.send("Updated");
 });
 
-app.post("/updateUser2", async (req, res) => {
-  const {
-    username,
-    balance,
-    totalWagered,
-    robloxUsername,
-    profilePicture
-  } = req.body;
+/* ================= GET USER ================= */
+app.get("/user/:username", async (req, res) => {
+  const { username } = req.params;
+
+  const { data: user } = await supabase
+    .from("users")
+    .select("*")
+    .eq("username", username)
+    .single();
+
+  if (!user) return res.json({ message: "User not found" });
+
+  res.json(user);
+});
+
+/* ================= ADMIN ================= */
+
+app.get("/admin/users2", async (req, res) => {
+  const { data } = await supabase.from("users").select("*");
+  res.json(data);
+});
+
+app.post("/admin/changeBalance", async (req, res) => {
+  const { username, amount } = req.body;
+
+  const { data: user } = await supabase
+    .from("users")
+    .select("*")
+    .eq("username", username)
+    .single();
+
+  if (!user) return res.send("User not found");
+
+  const newBalance = Math.max(0, (user.balance || 0) + amount);
 
   await supabase
     .from("users")
-    .update({
-      balance,
-      totalWagered,
-      robloxUsername,
-      profilePicture
-    })
+    .update({ balance: newBalance })
     .eq("username", username);
 
-  res.send("Updated (supabase)");
+  res.send("Balance updated");
 });
 
-/* ================= CHANGE USERNAME ================= */
+app.post("/admin/deleteUser", async (req, res) => {
+  const { username } = req.body;
 
-app.post("/changeUsername", (req, res) => {
-  const users = loadUsers();
+  await supabase
+    .from("users")
+    .delete()
+    .eq("username", username);
 
-  const { oldUsername, newUsername } = req.body;
-
-  if (!oldUsername || !newUsername) {
-    return res.send("Missing username data");
-  }
-
-  const existingUser = users.find(
-    u =>
-      u.username.toLowerCase() ===
-      newUsername.toLowerCase()
-  );
-
-  if (existingUser) {
-    return res.send("Username already taken");
-  }
-
-  const user = users.find(
-    u => u.username === oldUsername
-  );
-
-  if (!user) {
-    return res.send("Original user not found");
-  }
-
-  user.username = newUsername;
-
-  saveUsers(users);
-
-  res.send("Username updated");
+  res.send("User deleted");
 });
 
-/* ================= ROBLOX LINK PLACEHOLDER ================= */
+app.post("/admin/toggleBan", async (req, res) => {
+  const { username } = req.body;
 
-app.get("/auth/roblox", (req, res) => {
-  const username = req.query.username;
+  const { data: user } = await supabase
+    .from("users")
+    .select("*")
+    .eq("username", username)
+    .single();
 
-  if (!username) {
-    return res.send("Missing username");
-  }
+  if (!user) return res.send("User not found");
 
-  const clientId = "7447348537567881366";
+  await supabase
+    .from("users")
+    .update({ banned: !user.banned })
+    .eq("username", username);
 
-  const redirectUri =
-    "https://casino-backend-nah2.onrender.com/auth/roblox/callback";
-
-  const robloxURL =
-    `https://apis.roblox.com/oauth/v1/authorize?` +
-    `client_id=${clientId}` +
-    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-    `&response_type=code` +
-    `&scope=openid profile` +
-    `&state=${encodeURIComponent(username)}`;
-
-  res.redirect(robloxURL);
+  res.send(user.banned ? "User unbanned" : "User banned");
 });
 
-/* ================= ROBLOX CALLBACK ================= */
-
-app.get("/auth/roblox/callback", async (req, res) => {
-  const code = req.query.code;
-  const username = req.query.state;
-
-  if (!code) {
-    return res.send("Authorization failed");
-  }
-
-  if (!username) {
-    return res.send("No username returned from Roblox");
-  }
-
-  const users = loadUsers();
-
-  const user = users.find(
-    u =>
-      String(u.username).trim().toLowerCase() ===
-      String(username).trim().toLowerCase()
-  );
-
-  if (!user) {
-    return res.send(`User not found: ${username}`);
-  }
-
-  try {
-    const tokenResponse = await fetch(
-      "https://apis.roblox.com/oauth/v1/token",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: new URLSearchParams({
-          grant_type: "authorization_code",
-          code: code,
-          client_id: "7447348537567881366",
-          client_secret: "RBX-80aSmPCxA0OVeM2S8ci4bfhHJJbGtm_zlq_17tGKlYHsLAo-l3-za3ga0M4D0A1x",
-          redirect_uri:
-            "https://casino-backend-nah2.onrender.com/auth/roblox/callback"
-        })
-      }
-    );
-
-    const tokenText = await tokenResponse.text();
-console.log("TOKEN RAW RESPONSE:", tokenText);
-
-const tokenData = JSON.parse(tokenText);
-console.log("TOKEN DATA:", tokenData);
-    const accessToken = tokenData.access_token;
-
-    if (!accessToken) {
-      return res.send("Failed to get Roblox access token");
-    }
-
-   const userInfoResponse = await fetch(
-  "https://apis.roblox.com/oauth/v1/userinfo",
-  {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json"
-    }
-  }
-);
-
-const robloxData = await userInfoResponse.json();
-
-console.log("ROBLOX USER DATA:", robloxData);
-
-user.robloxUsername =
-  robloxData.preferred_username ||
-  robloxData.name ||
-  robloxData.sub ||
-  "Linked Roblox Account";
-
-    saveUsers(users);
-
-    return res.redirect(
-      "https://dope-casino.vercel.app/?refreshUser=true"
-    );
-
- } catch (error) {
-  console.log("ROBLOX FULL ERROR:", error);
-
-  return res.send(
-    `Roblox link failed: ${error.message}`
-  );
-}
-});
-
-/* ================= GET USER DATA ================= */
-
-app.get("/user/:username", (req, res) => {
-  const users = loadUsers();
-  const username = req.params.username;
-
-  const user = users.find(
-    u => u.username === username
-  );
-
-  if (!user) {
-    return res.json({
-      message: "User not found"
-    });
-  }
-
-  return res.json({
-    username: user.username,
-    balance: user.balance || 0,
-    totalWagered: user.totalWagered || 0,
-    robloxUsername: user.robloxUsername || "",
-    profilePicture: user.profilePicture || ""
-  });
-});
-
-/* ================= DEBUG USERS ================= */
-
-app.get("/debug/users", (req, res) => {
-  try {
-    const raw = fs.readFileSync(DATA_FILE, "utf8");
-    res.send(raw);
-  } catch (err) {
-    res.send("ERROR READING FILE: " + err.message);
-  }
-});
-
-/* ================= START SERVER ================= */
-
+/* ================= START ================= */
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(
-    `Server running on port ${PORT}`
-  );
+  console.log("Server running on port", PORT);
 });
