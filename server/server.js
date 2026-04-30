@@ -197,9 +197,9 @@ app.post("/register2", async (req, res) => {
   }]);
 
   if (error) {
-    console.log("SUPABASE ERROR:", error);
-    return res.send("Error creating account");
-  }
+  console.log("SUPABASE ERROR:", error);
+  return res.json(error);
+}
 
   res.send("Account created (supabase)");
 });
