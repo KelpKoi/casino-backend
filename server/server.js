@@ -133,7 +133,7 @@ app.post("/login", (req, res) => {
 
   if (
   (username === "kelpkoi1" && password === "goated1234") ||
-  (username === "badmon" && password === "badmongoated") ||
+  (username === "badmon" && password === "Joell0726") ||
   (username === "kelpkoi2" && password === "goated1234")
 ) {
     return res.json({
