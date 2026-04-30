@@ -87,7 +87,7 @@
       <div>
   <strong>Balance: </strong>
   <span id="profileBalance">0</span>
-<button onclick="showDepositInput()">+</button>
+<button onclick="freeDeposit()">+</button>
 </div>
 
       <div onclick="toggleProfilePanel()" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
@@ -332,14 +332,30 @@ if (data.isAdmin) {
 /* ================= BLACKJACK ================= */
 
 function drawCard() {
-  const cards = [2,3,4,5,6,7,8,9,10,10,10,10,11];
+  const cards = [
+    "2","3","4","5","6","7","8","9","10",
+    "J","Q","K","A"
+  ];
+
   return cards[Math.floor(Math.random() * cards.length)];
 }
 
 function calculateTotal(cards) {
-  let total = cards.reduce((a, b) => a + b, 0);
-  let aces = cards.filter(card => card === 11).length;
+  let total = 0;
+  let aces = 0;
 
+  cards.forEach(card => {
+    if (card === "A") {
+      total += 11;
+      aces++;
+    } else if (["K","Q","J"].includes(card)) {
+      total += 10;
+    } else {
+      total += Number(card);
+    }
+  });
+
+  // adjust Aces if bust
   while (total > 21 && aces > 0) {
     total -= 10;
     aces--;
@@ -423,20 +439,24 @@ function hitBlackjack() {
   playerTotal = calculateTotal(playerCards);
 
   if (playerTotal > 21) {
-    blackjackStarted = false;
+  blackjackStarted = false;
 
-    document.getElementById("gameMsg").innerText =
-      "Bust! You lose.";
+  renderBlackjack(true); // show full dealer + player cards
 
-    updateProfile();
-    saveUser();
+  const lastCard = playerCards[playerCards.length - 1];
 
-    setTimeout(() => {
-      showGame("blackjack");
-    }, 1500);
+  document.getElementById("gameMsg").innerText =
+    `Bust! You drew ${lastCard} and lost.`;
 
-    return;
-  }
+  updateProfile();
+  saveUser();
+
+  setTimeout(() => {
+    showGame("blackjack");
+  }, 2500);
+
+  return;
+}
 
   renderBlackjack();
 }
@@ -479,7 +499,7 @@ function splitBlackjack() {
   document.getElementById("gameMsg").innerText =
     "Split feature placeholder (can upgrade later)";
 }
-
+renderBlackjack(true);
 function finishBlackjack() {
   blackjackStarted = false;
 
@@ -812,21 +832,67 @@ function cashoutTowers() {
 
 /* ================= SHOW GAME ================= */
 
+function playCoinflip(choice) {
+  const bet = Number(
+    document.getElementById("customBet")?.value
+  );
+
+  if (!bet || bet <= 0) {
+    document.getElementById("gameMsg").innerText =
+      "Enter a valid bet";
+    return;
+  }
+
+  if (bet > balance) {
+    document.getElementById("gameMsg").innerText =
+      "Not enough balance";
+    return;
+  }
+
+  const result =
+    Math.random() < 0.5 ? "heads" : "tails";
+
+  balance -= bet;
+  totalWagered += bet;
+
+  if (choice === result) {
+    balance += bet * 2;
+
+    document.getElementById("gameMsg").innerText =
+      `You won! It landed on ${result}`;
+  } else {
+    document.getElementById("gameMsg").innerText =
+      `You lost! It landed on ${result}`;
+  }
+
+  updateProfile();
+  saveUser();
+}
+
 function showGame(game) {
   document.getElementById("gameMsg").innerText = "";
 
   if (game === "coinflip") {
-    document.getElementById("gameDisplay").innerHTML = `
-      <h2>Coinflip</h2>
-      <p>Coinflip system can go here next</p>
+  document.getElementById("gameDisplay").innerHTML = `
+    <h2>Coinflip</h2>
 
-      <input
-        id="customBet"
-        type="number"
-        placeholder="Enter Bet"
-      >
-    `;
-  }
+    <input
+      id="customBet"
+      type="number"
+      placeholder="Enter Bet"
+    >
+
+    <br><br>
+
+    <button onclick="playCoinflip('heads')">
+      Heads
+    </button>
+
+    <button onclick="playCoinflip('tails')">
+      Tails
+    </button>
+  `;
+}
 
   if (game === "blackjack") {
     document.getElementById("gameDisplay").innerHTML = `
@@ -1085,14 +1151,24 @@ const searchValue =
 
         <div style="margin-top:15px;">
 
-          <button onclick="changeBalance('${user.username}', 1000)">
-            +1000
-          </button>
+          <input
+  id="amount-${user.username}"
+  type="number"
+  placeholder="Amount"
+  style="width:100px;"
+>
 
-          <button onclick="changeBalance('${user.username}', -1000)">
-            -1000
-          </button>
+<button onclick="changeBalance('${user.username}',
+  Number(document.getElementById('amount-${user.username}').value || 0)
+)">
+  Give
+</button>
 
+<button onclick="changeBalance('${user.username}',
+  -Number(document.getElementById('amount-${user.username}').value || 0)
+)">
+  Take
+</button>
           <button onclick="deleteUser('${user.username}')">
             Delete Account
           </button>
@@ -1162,6 +1238,16 @@ async function toggleBan(username) {
   console.log(text);
 
   await loadAdminPanel();
+}
+
+function freeDeposit() {
+  balance += 100;
+
+  updateProfile();
+  saveUser();
+
+  document.getElementById("gameMsg").innerText =
+    "+100 credits added";
 }
 
 function showDepositInput() {
