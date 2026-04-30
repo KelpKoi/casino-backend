@@ -1,5 +1,10 @@
 // server/server.js
+const { createClient } = require('@supabase/supabase-js');
 
+const supabase = createClient(
+  "https://ehrwgafswlrnadsjqiwt.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVocndnYWZzd2xybmFkc2pxaXd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1MTA4MDUsImV4cCI6MjA5MzA4NjgwNX0.DPifZcnnCalNNcEVgPxOzkox33A1lCAkWQQk5Igqwac"
+);
 const express = require("express");
 const fs = require("fs");
 const cors = require("cors");
@@ -161,6 +166,31 @@ users.push({
   banned: false
 });
 
+app.post("/register2", async (req, res) => {
+  const { username, password } = req.body;
+
+  const { data: existing } = await supabase
+    .from("users")
+    .select("*")
+    .eq("username", username)
+    .single();
+
+  if (existing) return res.send("User already exists");
+
+  await supabase.from("users").insert([{
+    username,
+    password,
+    ipAddress: req.ip,
+    robloxUsername: "",
+    balance: 100,
+    totalWagered: 0,
+    profilePicture: "",
+    banned: false
+  }]);
+
+  res.send("Account created (supabase)");
+});
+
 saveUsers(users);
 console.log("REGISTER SAVED:", users.length);
 console.log("Saving user:", username);
@@ -173,6 +203,33 @@ console.log("Saving user:", username);
 app.post("/login", (req, res) => {
   const users = loadUsers();
   const { username, password } = req.body;
+
+  app.post("/login2", async (req, res) => {
+  const { username, password } = req.body;
+
+  const { data: user } = await supabase
+    .from("users")
+    .select("*")
+    .eq("username", username)
+    .single();
+
+  if (!user) return res.json({ message: "User not found" });
+
+  if (user.banned)
+    return res.json({ message: "Banned" });
+
+  if (user.password !== password)
+    return res.json({ message: "Wrong password" });
+
+  return res.json({
+    message: "Login success",
+    username: user.username,
+    balance: user.balance,
+    totalWagered: user.totalWagered,
+    robloxUsername: user.robloxUsername,
+    profilePicture: user.profilePicture
+  });
+});
 
   /* ---------- ADMIN LOGIN ---------- */
 
@@ -297,6 +354,14 @@ app.get("/admin/users", (req, res) => {
   res.json(users);
 });
 
+app.get("/admin/users2", async (req, res) => {
+  const { data } = await supabase
+    .from("users")
+    .select("*");
+
+  res.json(data);
+});
+
 /* ================= UPDATE USER ================= */
 
 app.post("/updateUser", (req, res) => {
@@ -338,6 +403,28 @@ console.log("AFTER SAVE COMPLETE");
   console.log("UPDATED USER:", user.username);
 
   res.send("Updated");
+});
+
+app.post("/updateUser2", async (req, res) => {
+  const {
+    username,
+    balance,
+    totalWagered,
+    robloxUsername,
+    profilePicture
+  } = req.body;
+
+  await supabase
+    .from("users")
+    .update({
+      balance,
+      totalWagered,
+      robloxUsername,
+      profilePicture
+    })
+    .eq("username", username);
+
+  res.send("Updated (supabase)");
 });
 
 /* ================= CHANGE USERNAME ================= */
