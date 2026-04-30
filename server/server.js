@@ -17,7 +17,7 @@ app.get("/", (req, res) => {
 });
 
 /* ================= REGISTER ================= */
-app.post("/register2", async (req, res) => {
+app.post("/register", async (req, res) => {
   const { username, password } = req.body;
 
   const { data: existing } = await supabase
@@ -45,10 +45,9 @@ app.post("/register2", async (req, res) => {
 });
 
 /* ================= LOGIN ================= */
-app.post("/login2", async (req, res) => {
+app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
-  // ADMIN LOGIN
   if (
     (username === "kelpkoi1" && password === "goated1234") ||
     (username === "badmon" && password === "Joell0726") ||
@@ -68,21 +67,21 @@ app.post("/login2", async (req, res) => {
     .single();
 
   if (!user) return res.json({ message: "User not found" });
-  if (user.banned) return res.json({ message: "Banned" });
+  if (user.banned) return res.json({ message: "This account is banned" });
   if (user.password !== password) return res.json({ message: "Wrong password" });
 
   return res.json({
     message: "Login success",
     username: user.username,
-    balance: user.balance,
-    totalWagered: user.totalWagered,
-    robloxUsername: user.robloxUsername,
-    profilePicture: user.profilePicture
+    robloxUsername: user.robloxUsername || "",
+    balance: user.balance || 0,
+    totalWagered: user.totalWagered || 0,
+    profilePicture: user.profilePicture || ""
   });
 });
 
 /* ================= UPDATE USER ================= */
-app.post("/updateUser2", async (req, res) => {
+app.post("/updateUser", async (req, res) => {
   const { username, balance, totalWagered, robloxUsername, profilePicture } = req.body;
 
   await supabase
@@ -110,7 +109,7 @@ app.get("/user/:username", async (req, res) => {
 
 /* ================= ADMIN ================= */
 
-app.get("/admin/users2", async (req, res) => {
+app.get("/admin/users", async (req, res) => {
   const { data } = await supabase.from("users").select("*");
   res.json(data);
 });
@@ -165,7 +164,6 @@ app.post("/admin/toggleBan", async (req, res) => {
 
   res.send(user.banned ? "User unbanned" : "User banned");
 });
-
 /* ================= START ================= */
 const PORT = process.env.PORT || 3000;
 
