@@ -1049,8 +1049,13 @@ const searchValue =
 
   <div>
     <h3 style="margin:0;">
-      ${user.username}
-    </h3>
+  ${user.username}
+  ${
+    user.banned
+      ? '<span style="color:red;">(BANNED)</span>'
+      : ""
+  }
+</h3>
 
     <p style="margin:5px 0 0 0;">
       <strong>Balance:</strong> ${user.balance}
@@ -1090,6 +1095,9 @@ const searchValue =
 
           <button onclick="deleteUser('${user.username}')">
             Delete Account
+          </button>
+          <button onclick="toggleBan('${user.username}')">
+          ${user.banned ? "Unban" : "Ban"}
           </button>
 
         </div>
@@ -1133,6 +1141,21 @@ async function deleteUser(username) {
     body: JSON.stringify({
       username
     })
+  });
+
+  const text = await res.text();
+  console.log(text);
+
+  await loadAdminPanel();
+}
+
+async function toggleBan(username) {
+  const res = await fetch(`${API}/admin/toggleBan`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ username })
   });
 
   const text = await res.text();

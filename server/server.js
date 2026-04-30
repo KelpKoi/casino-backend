@@ -10,6 +10,20 @@ app.use(cors());
 
 const path = require("path");
 const DATA_FILE = path.join(__dirname, "users.json");
+const BANNED_USERNAMES = [
+  "admin",
+  "owner",
+  "mod",
+  "staff",
+  "support",
+  "casino",
+  "roblox",
+  "system",
+  "null",
+  "kelpkoi1",
+  "kelpkoi2",
+  "badmon"
+];
 
 /* ================= FILE SYSTEM ================= */
 
@@ -67,6 +81,12 @@ app.get("/", (req, res) => {
 app.post("/register", (req, res) => {
   const users = loadUsers();
   const { username, password } = req.body;
+  const cleanUsername =
+  username.trim().toLowerCase();
+
+if (BANNED_USERNAMES.includes(cleanUsername)) {
+  return res.send("Username not allowed");
+}
 
   if (!username || !password) {
     return res.send("Fill all fields");
@@ -92,7 +112,8 @@ users.push({
   robloxUsername: "",
   balance: 100,
   totalWagered: 0,
-  profilePicture: ""
+  profilePicture: "",
+  banned: false
 });
 
   saveUsers(users);
@@ -140,6 +161,11 @@ const userIP =
 
 user.ipAddress = String(userIP);
 saveUsers(users);
+if (user.banned) {
+  return res.json({
+    message: "This account is banned"
+  });
+}
   if (user.password !== password) {
     return res.json({
       message: "Wrong password"
@@ -193,6 +219,29 @@ app.post("/admin/deleteUser", (req, res) => {
 
   saveUsers(users);
   res.send("User deleted");
+});
+
+/* ADMIN BAN/UNBAN */
+
+app.post("/admin/toggleBan", (req, res) => {
+  const users = loadUsers();
+  const { username } = req.body;
+
+  const user = users.find(
+    u => u.username === username
+  );
+
+  if (!user) {
+    return res.send("User not found");
+  }
+
+  user.banned = !user.banned;
+
+  saveUsers(users);
+
+  res.send(
+    user.banned ? "User banned" : "User unbanned"
+  );
 });
 
 /* ================= ADMIN VIEW ALL USERS ================= */
