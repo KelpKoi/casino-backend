@@ -16,20 +16,26 @@ function restoreIfNeeded() {
     const mainExists = fs.existsSync(DATA_FILE);
     const backupExists = fs.existsSync(BACKUP_FILE);
 
-    if (!mainExists && backupExists) {
-      console.log("RESTORING users.json FROM BACKUP");
-      const backup = fs.readFileSync(BACKUP_FILE, "utf8");
-      fs.writeFileSync(DATA_FILE, backup, "utf8");
+    if (!backupExists) return;
+
+    const backupRaw = fs.readFileSync(BACKUP_FILE, "utf8");
+
+    if (!backupRaw || backupRaw.trim() === "[]") {
+      console.log("BACKUP EMPTY — SKIPPING RESTORE");
+      return;
     }
 
-    if (mainExists) {
-      const raw = fs.readFileSync(DATA_FILE, "utf8");
+    if (!mainExists) {
+      console.log("RESTORING FROM BACKUP (missing file)");
+      fs.writeFileSync(DATA_FILE, backupRaw, "utf8");
+      return;
+    }
 
-      if ((!raw || raw.trim() === "[]") && backupExists) {
-        console.log("MAIN FILE EMPTY — RESTORING BACKUP");
-        const backup = fs.readFileSync(BACKUP_FILE, "utf8");
-        fs.writeFileSync(DATA_FILE, backup, "utf8");
-      }
+    const mainRaw = fs.readFileSync(DATA_FILE, "utf8");
+
+    if (!mainRaw || mainRaw.trim() === "[]") {
+      console.log("MAIN EMPTY — RESTORING BACKUP");
+      fs.writeFileSync(DATA_FILE, backupRaw, "utf8");
     }
 
   } catch (err) {
@@ -93,13 +99,16 @@ function saveUsers(users) {
   try {
     const data = JSON.stringify(users, null, 2);
 
-    // save main file
+    // always save main file
     fs.writeFileSync(DATA_FILE, data, "utf8");
 
-    // ALSO save backup
-    fs.writeFileSync(BACKUP_FILE, data, "utf8");
-
-    console.log("Users + backup saved");
+    // ❗ ONLY backup if users exist
+    if (users.length > 0) {
+      fs.writeFileSync(BACKUP_FILE, data, "utf8");
+      console.log("Users + backup saved");
+    } else {
+      console.log("Skipped backup (empty data)");
+    }
 
   } catch (err) {
     console.log("SAVE ERROR:", err);
