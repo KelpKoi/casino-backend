@@ -10,6 +10,35 @@ app.use(cors());
 
 const path = require("path");
 const DATA_FILE = path.join(__dirname, "./users.json");
+const BACKUP_FILE = path.join(__dirname, "users_backup.json");
+function restoreIfNeeded() {
+  try {
+    const mainExists = fs.existsSync(DATA_FILE);
+    const backupExists = fs.existsSync(BACKUP_FILE);
+
+    if (!mainExists && backupExists) {
+      console.log("RESTORING users.json FROM BACKUP");
+      const backup = fs.readFileSync(BACKUP_FILE, "utf8");
+      fs.writeFileSync(DATA_FILE, backup, "utf8");
+    }
+
+    if (mainExists) {
+      const raw = fs.readFileSync(DATA_FILE, "utf8");
+
+      if ((!raw || raw.trim() === "[]") && backupExists) {
+        console.log("MAIN FILE EMPTY — RESTORING BACKUP");
+        const backup = fs.readFileSync(BACKUP_FILE, "utf8");
+        fs.writeFileSync(DATA_FILE, backup, "utf8");
+      }
+    }
+
+  } catch (err) {
+    console.log("RESTORE ERROR:", err);
+  }
+}
+
+// run on startup
+restoreIfNeeded();
 if (!fs.existsSync(DATA_FILE)) {
   console.log("CREATING users.json FILE");
   fs.writeFileSync(DATA_FILE, "[]", "utf8");
@@ -62,17 +91,15 @@ function loadUsers() {
 
 function saveUsers(users) {
   try {
-    fs.writeFileSync(
-      DATA_FILE,
-      JSON.stringify(users, null, 2),
-      "utf8"
-    );
+    const data = JSON.stringify(users, null, 2);
 
-    console.log("Users saved successfully");
+    // save main file
+    fs.writeFileSync(DATA_FILE, data, "utf8");
 
-    // VERIFY WRITE
-    const verify = fs.readFileSync(DATA_FILE, "utf8");
-    console.log("VERIFY FILE CONTENT:", verify);
+    // ALSO save backup
+    fs.writeFileSync(BACKUP_FILE, data, "utf8");
+
+    console.log("Users + backup saved");
 
   } catch (err) {
     console.log("SAVE ERROR:", err);
