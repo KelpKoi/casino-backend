@@ -400,13 +400,17 @@ function startBlackjack() {
 }
 
 function renderBlackjack(showDealer = false) {
-  const visibleDealer = showDealer
-    ? dealerCards.join(" , ")
-    : `${dealerCards[0]} , ?`;
+  let dealerText = "";
 
-  const visibleDealerTotal = showDealer
-    ? dealerTotal
-    : dealerCards[0];
+if (showDealer) {
+  dealerText = `[ ${dealerCards.join(", ")} ] (${dealerTotal})`;
+} else {
+  dealerText = `[ ${dealerCards[0]} ? ] (${calculateTotal([dealerCards[0]])})`;
+}
+
+const visibleDealerTotal = showDealer
+  ? dealerTotal
+  : calculateTotal([dealerCards[0]]);
 
   document.getElementById("gameDisplay").innerHTML = `
     <h2>Blackjack</h2>
@@ -414,22 +418,38 @@ function renderBlackjack(showDealer = false) {
     <p><strong>Bet:</strong> ${blackjackBet}</p>
 
     <p>
-      <strong>Dealer:</strong>
-      [ ${visibleDealer} ]
-      (${visibleDealerTotal})
-    </p>
+  <strong>Dealer:</strong>
+  ${dealerText}
+</p>
 
     <p>
       <strong>You:</strong>
-      [ ${playerCards.join(" , ")} ]
+      [ ${playerCards.join(", ")} ]
       (${playerTotal})
     </p>
 
-    <button onclick="hitBlackjack()">Hit</button>
-    <button onclick="standBlackjack()">Stand</button>
-    <button onclick="doubleBlackjack()">Double</button>
-    <button onclick="splitBlackjack()">Split</button>
+  <button onclick="hitBlackjack()" ${!blackjackStarted ? "disabled" : ""}>Hit</button>
+  <button onclick="standBlackjack()" ${!blackjackStarted ? "disabled" : ""}>Stand</button>
+  <button onclick="doubleBlackjack()" ${!blackjackStarted ? "disabled" : ""}>Double</button>
+  <button onclick="splitBlackjack()" ${!blackjackStarted ? "disabled" : ""}>Split</button>
   `;
+}
+
+function standBlackjack() {
+  if (!blackjackStarted) return;
+
+  blackjackStarted = false; // <-- ADD THIS
+
+  while (dealerTotal < 17) {
+    dealerCards.push(drawCard());
+    dealerTotal = calculateTotal(dealerCards);
+  }
+
+  renderBlackjack(true); // SHOW ALL CARDS
+
+  setTimeout(() => {
+    finishBlackjack();
+  }, 500);
 }
 
 function hitBlackjack() {
@@ -439,37 +459,26 @@ function hitBlackjack() {
   playerTotal = calculateTotal(playerCards);
 
   if (playerTotal > 21) {
-  blackjackStarted = false;
+    blackjackStarted = false;
 
-  renderBlackjack(true); // show full dealer + player cards
+    renderBlackjack(true);
 
-  const lastCard = playerCards[playerCards.length - 1];
+    const lastCard = playerCards[playerCards.length - 1];
 
-  document.getElementById("gameMsg").innerText =
-    `Bust! You drew ${lastCard} and lost.`;
+    document.getElementById("gameMsg").innerText =
+      `Bust! You drew ${lastCard} and lost.`;
 
-  updateProfile();
-  saveUser();
+    updateProfile();
+    saveUser();
 
-  setTimeout(() => {
-    showGame("blackjack");
-  }, 2500);
+    setTimeout(() => {
+      showGame("blackjack");
+    }, 2500);
 
-  return;
-}
-
-  renderBlackjack();
-}
-
-function standBlackjack() {
-  if (!blackjackStarted) return;
-
-  while (dealerTotal < 17) {
-    dealerCards.push(drawCard());
-    dealerTotal = calculateTotal(dealerCards);
+    return;
   }
 
-  finishBlackjack();
+  renderBlackjack();
 }
 
 function doubleBlackjack() {
@@ -499,9 +508,11 @@ function splitBlackjack() {
   document.getElementById("gameMsg").innerText =
     "Split feature placeholder (can upgrade later)";
 }
-renderBlackjack(true);
+
 function finishBlackjack() {
   blackjackStarted = false;
+
+  renderBlackjack(true); // <-- ADD THIS LINE
 
   let result = "";
 
