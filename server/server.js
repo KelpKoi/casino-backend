@@ -50,8 +50,6 @@ console.log("TOKEN RESPONSE:", tokenData);
 if (!tokenData.access_token) {
   return res.send("OAuth failed: " + JSON.stringify(tokenData));
 }
-
-const accessToken = tokenData.access_token;
     const accessToken = tokenData.access_token;
 
     const userRes = await fetch("https://apis.roblox.com/oauth/v1/userinfo", {
